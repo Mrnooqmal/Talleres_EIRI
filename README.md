@@ -3,8 +3,12 @@
 Portal de recursos para los talleres de robótica de EIRI (Universidad del Desarrollo).
 Los estudiantes acceden al material sin login; los tutores gestionan todo desde el panel de administración.
 
-**En producción:** http://34.234.41.122 (EC2 + S3/CloudFront en AWS, region us-east-1).
-Panel: http://34.234.41.122/admin/login
+**En producción:** https://34-234-41-122.sslip.io (EC2 + S3/CloudFront en AWS, region us-east-1).
+Panel: https://34-234-41-122.sslip.io/admin/login
+
+> HTTPS vía Let's Encrypt usando el hostname de sslip.io (resuelve a la IP `34.234.41.122`).
+> El cert se renueva solo (timer de certbot). Si se recrea la instancia, re-emitir con:
+> `sudo certbot --nginx -d 34-234-41-122.sslip.io --agree-tos -m TU_EMAIL --redirect`
 
 ## Stack
 
