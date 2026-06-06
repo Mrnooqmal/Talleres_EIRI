@@ -96,6 +96,7 @@ document.querySelectorAll('.adm-nav-item[data-view]').forEach(btn => {
     if (btn.dataset.view === 'gallery')  loadGalleryAdmin();
     if (btn.dataset.view === 'rankings') loadRankingsAdmin();
     if (btn.dataset.view === 'teams')    loadTeamsAdmin();
+    if (btn.dataset.view === 'feedback') loadFeedback();
   });
 });
 
@@ -700,6 +701,41 @@ async function loadLogs() {
 
 document.getElementById('refreshLogsBtn')?.addEventListener('click', loadLogs)
 
+// Feedback / comentarios
+async function loadFeedback() {
+  const container = document.getElementById('feedbackList');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-dim);font-size:.85rem">Cargando...</p>';
+  try {
+    const items = await api('GET', '/api/admin/feedback');
+    if (!items.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Aún no hay comentarios.</p>';
+      return;
+    }
+    container.innerHTML = items.map(f => `
+      <div class="feedback-card">
+        <div class="feedback-card-head">
+          <span class="feedback-card-name">${escHtml(f.name) || 'Anónimo'}</span>
+          <span class="feedback-card-date">${fmtFechaCL(f.created_at)}</span>
+          <button class="btn-icon btn-del" onclick="deleteFeedback(${f.id})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+        </div>
+        <p class="feedback-card-msg">${escHtml(f.message)}</p>
+      </div>`).join('');
+    lucide.createIcons({ nodes: [container] });
+  } catch (e) {
+    container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function deleteFeedback(id) {
+  confirm('Eliminar comentario', '¿Eliminar este comentario? Esta acción no se puede deshacer.', async () => {
+    await api('DELETE', `/api/admin/feedback/${id}`);
+    loadFeedback();
+  });
+}
+
+document.getElementById('refreshFeedbackBtn')?.addEventListener('click', loadFeedback)
+
 // Tutores
 async function loadTutores() {
   const container = document.getElementById('tutoresList');
@@ -1159,7 +1195,7 @@ Object.assign(window, {
   editSession, deleteSession, addProject, editProject, deleteProject,
   addAsset, editAsset, deleteAsset, deleteTutor, resetTutorPw, renameTutor, makeSuperAdmin,
   editGalleryItem, deleteGalleryItem, editRanking, deleteRanking,
-  editTeam, deleteTeam,
+  editTeam, deleteTeam, deleteFeedback,
 });
 
 // Init

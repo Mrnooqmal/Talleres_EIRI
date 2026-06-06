@@ -146,6 +146,12 @@ db.exec(`
     name       TEXT NOT NULL UNIQUE,
     created_at TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS feedback (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT DEFAULT '',
+    message    TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 `)
 
 // ─── Seeds ───────────────────────────────────────────
@@ -538,6 +544,27 @@ app.put('/api/admin/teams/:id', requireAdmin, (req, res) => {
 app.delete('/api/admin/teams/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM teams WHERE id=?').run(req.params.id)
   log(req, 'delete_team', req.params.id)
+  res.json({ ok: true })
+})
+
+// ─── Feedback ─────────────────────────────────────────
+
+app.post('/api/feedback', (req, res) => {
+  const name    = (req.body.name || '').toString().trim().slice(0, 80)
+  const message = (req.body.message || '').toString().trim().slice(0, 2000)
+  if (!message) return res.status(400).json({ error: 'El comentario no puede estar vacío' })
+  const r = db.prepare('INSERT INTO feedback (name, message) VALUES (?,?)').run(name, message)
+  log(req, 'feedback', name || 'anónimo')
+  res.status(201).json({ id: r.lastInsertRowid })
+})
+
+app.get('/api/admin/feedback', requireAdmin, (req, res) => {
+  res.json(db.prepare('SELECT * FROM feedback ORDER BY created_at DESC, id DESC').all())
+})
+
+app.delete('/api/admin/feedback/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM feedback WHERE id=?').run(req.params.id)
+  log(req, 'delete_feedback', req.params.id)
   res.json({ ok: true })
 })
 

@@ -423,3 +423,27 @@ input, textarea, select { font-family: var(--f-body); font-size: 0.9rem; }
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Feedback / comentarios */
+.feedback-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.8rem;
+}
+.feedback-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.5rem;
+}
+.feedback-card-name { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+.feedback-card-date { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; }
+.feedback-card-msg {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}

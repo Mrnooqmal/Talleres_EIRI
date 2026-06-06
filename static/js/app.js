@@ -617,6 +617,52 @@ async function loadRankings() {
   } catch {}
 }
 
+// Feedback / sugerencias
+function initFeedback() {
+  const openBtn  = document.getElementById('openFeedbackBtn')
+  const backdrop = document.getElementById('feedbackBackdrop')
+  const closeBtn = document.getElementById('feedbackClose')
+  const sendBtn  = document.getElementById('fb-send')
+  if (!openBtn || !backdrop) return
+
+  const msgEl    = document.getElementById('fb-message')
+  const userEl   = document.getElementById('fb-name')
+  const status   = document.getElementById('fb-status')
+
+  const open  = () => { backdrop.classList.add('open'); status.textContent = ''; setTimeout(() => msgEl.focus(), 50) }
+  const close = () => backdrop.classList.remove('open')
+
+  openBtn.addEventListener('click', open)
+  closeBtn.addEventListener('click', close)
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close() })
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close() })
+
+  sendBtn.addEventListener('click', async () => {
+    const message = msgEl.value.trim()
+    if (!message) { status.textContent = 'Escribe un comentario'; status.className = 'feedback-feedback err'; return }
+    sendBtn.disabled = true
+    try {
+      const res  = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: userEl.value.trim(), message }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Error')
+      status.textContent = '¡Gracias por tu comentario!'
+      status.className = 'feedback-feedback ok'
+      msgEl.value = ''
+      userEl.value = ''
+      setTimeout(close, 1400)
+    } catch (e) {
+      status.textContent = e.message
+      status.className = 'feedback-feedback err'
+    } finally {
+      sendBtn.disabled = false
+    }
+  })
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initCarousel();
   initNavbar();
@@ -629,6 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadGallery();
   loadTeams();
   loadRankings();
+  initFeedback();
   lucide.createIcons();
 });
 

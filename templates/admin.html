@@ -45,6 +45,10 @@
                 <i data-lucide="users"></i>
                 <span>Tutores</span>
             </button>
+            <button class="adm-nav-item" data-view="feedback">
+                <i data-lucide="message-square"></i>
+                <span>Comentarios</span>
+            </button>
             <button class="adm-nav-item" data-view="logs">
                 <i data-lucide="activity"></i>
                 <span>Registros</span>
@@ -218,6 +222,20 @@
                 </button>
             </div>
             <div id="tutoresList"></div>
+        </div>
+
+        <!-- Feedback view -->
+        <div id="view-feedback" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Comentarios</h2>
+                    <p class="adm-sub">Comentarios y sugerencias enviados desde el sitio</p>
+                </div>
+                <button class="btn-ghost" id="refreshFeedbackBtn">
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+            <div id="feedbackList"></div>
         </div>
 
         <!-- Logs view -->

@@ -238,6 +238,38 @@
     </div>
 </section>
 
+<section id="feedback" class="section feedback-section">
+    <div class="container">
+        <div class="feedback-cta reveal">
+            <h2 class="feedback-title">¿Tienes comentarios o sugerencias?</h2>
+            <p class="feedback-desc">Ayúdanos a mejorar los talleres. Tu opinión llega directo al equipo.</p>
+            <button class="btn btn-primary" id="openFeedbackBtn">
+                <i data-lucide="message-square-plus"></i>
+                Dejar un comentario
+            </button>
+        </div>
+    </div>
+</section>
+
+<div class="feedback-modal-backdrop" id="feedbackBackdrop">
+    <div class="feedback-modal">
+        <button class="feedback-modal-close" id="feedbackClose" aria-label="Cerrar"><i data-lucide="x"></i></button>
+        <h3 class="feedback-modal-title">Comentarios y sugerencias</h3>
+        <div class="field-group">
+            <label for="fb-name">Nombre (opcional)</label>
+            <input type="text" id="fb-name" placeholder="Tu nombre" maxlength="80" autocomplete="off">
+        </div>
+        <div class="field-group">
+            <label for="fb-message">Comentario</label>
+            <textarea id="fb-message" rows="4" placeholder="Cuéntanos qué piensas..." maxlength="2000"></textarea>
+        </div>
+        <div class="feedback-modal-actions">
+            <span class="feedback-feedback" id="fb-status"></span>
+            <button class="btn btn-primary" id="fb-send">Enviar</button>
+        </div>
+    </div>
+</div>
+
 <footer class="footer">
     <div class="container">
         <div class="footer-main">
