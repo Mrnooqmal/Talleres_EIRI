@@ -373,18 +373,49 @@ function renderAssets(assets, projectId, container) {
     container.innerHTML = '<p style="color:var(--text-dim);font-size:.75rem;padding:.3rem 0">Sin recursos.</p>';
     return;
   }
-  container.innerHTML = assets.map(a => `
-    <div class="asset-item" data-aid="${a.id}">
-      <div class="asset-item-type"><i data-lucide="${TYPE_ICONS[a.type] || 'file'}"></i></div>
-      <span class="asset-item-label">${escHtml(a.label)}</span>
-      ${a.language ? `<span class="asset-item-lang">${a.language}</span>` : ''}
-      ${a.is_locked ? `<span class="asset-item-lock"><i data-lucide="lock"></i></span>` : ''}
-      <div class="si-actions">
-        <button class="btn-icon" title="Editar" onclick="editAsset(${a.id},${projectId})"><i data-lucide="edit-2"></i></button>
-        <button class="btn-icon btn-del" title="Eliminar" onclick="deleteAsset(${a.id},'${escHtml(a.label)}',${projectId})"><i data-lucide="trash-2"></i></button>
+
+  const imageAssets = assets.filter(a => a.type === 'diagram');
+  const otherAssets = assets.filter(a => a.type !== 'diagram');
+
+  let html = '';
+
+  if (imageAssets.length > 0) {
+    html += '<h4>Imágenes</h4>';
+    html += '<div class="assets-grid">';
+    html += imageAssets.map(a => `
+      <div class="asset-image-card" data-aid="${a.id}">
+        <img src="${escHtml(a.content)}" alt="${escHtml(a.label)}">
+        <div class="asset-image-overlay">
+          <span class="asset-item-label">${escHtml(a.label)}</span>
+          <div class="si-actions">
+            <button class="btn-icon" title="Editar" onclick="editAsset(${a.id},${projectId})"><i data-lucide="edit-2"></i></button>
+            <button class="btn-icon btn-del" title="Eliminar" onclick="deleteAsset(${a.id},'${escHtml(a.label)}',${projectId})"><i data-lucide="trash-2"></i></button>
+          </div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+    html += '</div>';
+  }
+
+  if (otherAssets.length > 0) {
+    if (imageAssets.length > 0) {
+      html += '<h4 style="margin-top: 1.5rem;">Otros Recursos</h4>';
+    }
+    html += otherAssets.map(a => `
+      <div class="asset-item" data-aid="${a.id}">
+        <div class="asset-item-type"><i data-lucide="${TYPE_ICONS[a.type] || 'file'}"></i></div>
+        <span class="asset-item-label">${escHtml(a.label)}</span>
+        ${a.language ? `<span class="asset-item-lang">${a.language}</span>` : ''}
+        ${a.is_locked ? `<span class="asset-item-lock"><i data-lucide="lock"></i></span>` : ''}
+        <div class="si-actions">
+          <button class="btn-icon" title="Editar" onclick="editAsset(${a.id},${projectId})"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon btn-del" title="Eliminar" onclick="deleteAsset(${a.id},'${escHtml(a.label)}',${projectId})"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  container.innerHTML = html;
   lucide.createIcons({ nodes: [container] });
 }
 
@@ -420,14 +451,14 @@ function assetFormHTML(a = {}) {
           <label class="btn-ghost" style="cursor:pointer;font-size:.72rem;padding:.25rem .6rem">
             <i data-lucide="upload" style="width:12px;height:12px"></i> Subir archivo
             <input type="file" id="f-file-code" style="display:none"
-              accept=".ino,.cpp,.c,.py,.js,.ts,.h,.hpp,.txt,.md">
+              accept=".ino,.cpp,.c,.py,.js,.ts,.h,.hpp,.txt,.md" multiple>
           </label>
         </span>
         <span id="fg-upload-img" style="${isFile?'':'display:none'}">
           <label class="btn-ghost" style="cursor:pointer;font-size:.72rem;padding:.25rem .6rem">
             <i data-lucide="upload" style="width:12px;height:12px"></i> Subir archivo
             <input type="file" id="f-file-img" style="display:none"
-              accept="${t==='slides'?'.pdf':'image/*,.svg'}">
+              accept="${t==='slides'?'.pdf':'image/*,.svg'}" multiple>
           </label>
         </span>
       </div>
@@ -475,35 +506,53 @@ function bindAssetFileHandlers() {
 
   if (codeInput) {
     codeInput.addEventListener('change', async () => {
-      const file = codeInput.files[0]; if (!file) return
-      status.textContent = `Cargando: ${file.name}...`
-      saveBtn.disabled = true
-      const text = await file.text()
-      ta.value = text
-      status.textContent = `Cargado: ${file.name}`
-      saveBtn.disabled = false
-    })
+      const files = codeInput.files;
+      if (!files.length) return;
+      
+      const file = files[0];
+      status.textContent = `Cargando: ${file.name}...`;
+      saveBtn.disabled = true;
+      const text = await file.text();
+      ta.value = text;
+      status.textContent = `Cargado: ${file.name}`;
+      if (files.length > 1) {
+        status.textContent += ` (se seleccionaron ${files.length} archivos, solo se usó el primero).`;
+      }
+      saveBtn.disabled = false;
+    });
   }
 
   if (imgInput) {
     imgInput.addEventListener('change', async () => {
-      const file = imgInput.files[0]; if (!file) return
-      status.textContent = 'Subiendo...'
-      saveBtn.disabled = true
-      const fd = new FormData()
-      fd.append('file', file)
-      try {
-        const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error)
-        ta.value = data.url
-        status.textContent = `Subido: ${data.name}`
-      } catch (e) {
-        status.textContent = `Error: ${e.message}`
-      } finally {
-        saveBtn.disabled = false
+      const files = imgInput.files;
+      if (!files.length) return;
+
+      status.textContent = `Subiendo ${files.length} archivos...`;
+      saveBtn.disabled = true;
+      const urls = [];
+
+      for (const f of files) {
+        const fd = new FormData();
+        fd.append('file', f);
+        try {
+          const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          urls.push(data.url);
+        } catch (e) {
+          status.textContent = `Error: ${e.message}`;
+          saveBtn.disabled = false;
+          return;
+        }
       }
-    })
+      
+      ta.value = urls[0];
+      status.textContent = `Subido: ${files[0].name}`;
+      if (files.length > 1) {
+        status.textContent = `${files.length} archivos subidos. Solo se usó la URL del primero.`;
+      }
+      saveBtn.disabled = false;
+    });
   }
 }
 
@@ -669,6 +718,11 @@ async function loadTutores() {
                 <button class="btn-icon" onclick="resetTutorPw(${t.id},'${escHtml(t.username)}')" title="Cambiar contraseña">
                   <i data-lucide="key"></i>
                 </button>
+                ${!t.is_super ? `
+                <button class="btn-icon" onclick="makeSuperAdmin(${t.id},'${escHtml(t.username)}')" title="Hacer Admin Principal">
+                  <i data-lucide="crown"></i>
+                </button>
+                ` : ''}
                 <button class="btn-icon btn-del" onclick="deleteTutor(${t.id},'${escHtml(t.username)}')" title="Eliminar">
                   <i data-lucide="trash-2"></i>
                 </button>
@@ -812,7 +866,7 @@ function galleryFormHTML(item = {}) {
       <input type="text" id="f-gal-url" value="${escHtml(item.url || '')}" placeholder="https://... o deja vacío y sube archivo">
       <div style="margin-top:0.4rem;display:flex;gap:0.5rem;align-items:center">
         <button type="button" class="btn-ghost btn--sm" id="f-gal-upload-btn"><i data-lucide="upload"></i> Subir imagen</button>
-        <input type="file" id="f-gal-file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display:none">
+        <input type="file" id="f-gal-file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display:none" multiple>
         <span id="f-gal-upload-status" style="font-size:0.72rem;color:var(--text-dim)"></span>
       </div>
     </div>
@@ -834,23 +888,43 @@ function bindGalleryUpload() {
   if (!btn) return;
   btn.addEventListener('click', () => file.click());
   file.addEventListener('change', async () => {
-    if (!file.files[0]) return;
-    status.textContent = 'Subiendo...';
-    try {
-      const fd = new FormData();
-      fd.append('file', file.files[0]);
-      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      urlEl.value       = data.url;
-      status.textContent = 'Listo';
-    } catch (e) {
-      status.textContent = 'Error: ' + e.message;
+    if (!file.files.length) return;
+    
+    const files = Array.from(file.files);
+    status.textContent = `Subiendo ${files.length} archivos...`;
+    const urls = [];
+
+    for (const f of files) {
+      try {
+        const fd = new FormData();
+        fd.append('file', f);
+        const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        urls.push(data.url);
+      } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+        return; // Stop on first error
+      }
+    }
+    
+    urlEl.value = urls.join('\\n'); // Use newline as separator for multiple URLs
+    status.textContent = `${files.length} archivos subidos.`;
+    
+    if (files.length === 1) {
+        urlEl.value = urls[0];
+    } else {
+        // If multiple files, we need a way to create multiple gallery items.
+        // For now, let's just put the first URL in the box and notify the user.
+        urlEl.value = urls[0];
+        status.textContent = `${files.length} archivos subidos. El primer archivo es ${urls[0]}. Por favor, guarda y añade los otros manualmente.`;
+        // A better UX would be to automatically create multiple gallery item forms.
+        // This is a bigger change, so for now we'll stick to this.
     }
   });
 }
 
-document.getElementById('addGalleryBtn')?.addEventListener('click', () => {
+document.getElementById('addGalleryItemBtn')?.addEventListener('click', () => {
   openModal('Nueva entrada de galería', galleryFormHTML(), async () => {
     const payload = {
       title:       document.getElementById('f-gal-title').value.trim(),
@@ -1077,4 +1151,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.querySelector('.adm-nav-item[data-view="tutores"]')?.remove();
     }
   } catch {}
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.adm-sidebar');
+
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target) && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+    }
 });
