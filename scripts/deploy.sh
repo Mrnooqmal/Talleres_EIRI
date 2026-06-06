@@ -1,4 +1,6 @@
 #!/bin/bash
+# Despliegue por git: actualiza el codigo en la EC2 y reinicia la app.
+# Requiere haber hecho push a la rama main del repo.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -6,38 +8,26 @@ TF_DIR="$SCRIPT_DIR/../terraform"
 
 IP=$(terraform -chdir="$TF_DIR" output -raw public_ip 2>/dev/null || echo "")
 if [ -z "$IP" ]; then
-  echo "Error: no se encontró la IP. Ejecuta primero: cd terraform && terraform apply"
+  echo "Error: no se encontro la IP. Ejecuta primero: cd terraform && terraform apply"
   exit 1
 fi
 
 KEY="${SSH_KEY_FILE:-$HOME/.ssh/id_rsa}"
 REMOTE="ubuntu@$IP"
-APP_DIR="/opt/eiri"
 
-echo "Deploying to $IP..."
+echo "Desplegando en $IP..."
 
-rsync -avz --progress \
-  --exclude 'node_modules' \
-  --exclude 'eiri.db*' \
-  --exclude 'static/uploads' \
-  --exclude '.env' \
-  --exclude '.git' \
-  --exclude 'terraform' \
-  --exclude 'scripts' \
-  -e "ssh -i $KEY -o StrictHostKeyChecking=no" \
-  "$SCRIPT_DIR/../" "$REMOTE:$APP_DIR/"
-
-ssh -i "$KEY" -o StrictHostKeyChecking=no "$REMOTE" << 'REMOTE_CMDS'
+ssh -i "$KEY" -o StrictHostKeyChecking=no "$REMOTE" 'bash -s' <<'REMOTE_CMDS'
+set -e
 cd /opt/eiri
-mkdir -p static/uploads
-npm install --omit=dev
-pm2 restart eiri 2>/dev/null || pm2 start npm --name eiri -- start
+git fetch -q origin
+git checkout -f -B main origin/main
+git log --oneline -1
+npm ci --omit=dev
+pm2 restart eiri --update-env || pm2 start npm --name eiri -- start
 pm2 save
 REMOTE_CMDS
 
 echo ""
-echo "Deployed → http://$IP"
-echo ""
-echo "HTTPS con dominio:"
-echo "  ssh ubuntu@$IP"
-echo "  sudo certbot --nginx -d tudominio.com"
+echo "Listo -> http://$IP"
+echo "HTTPS con dominio: ssh ubuntu@$IP y luego sudo certbot --nginx -d tudominio.com"

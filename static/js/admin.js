@@ -638,9 +638,15 @@ async function loadTutores() {
           ${tutores.map(t => `
             <tr>
               <td>#${t.id}</td>
-              <td><strong>${escHtml(t.username)}</strong></td>
+              <td>
+                <strong>${escHtml(t.username)}</strong>
+                ${t.is_super ? '<span class="tutor-badge">Admin principal</span>' : ''}
+              </td>
               <td>${(t.created_at || '').slice(0,10)}</td>
               <td style="display:flex;gap:.4rem">
+                <button class="btn-icon" onclick="renameTutor(${t.id},'${escHtml(t.username)}')" title="Cambiar nombre de usuario">
+                  <i data-lucide="pencil"></i>
+                </button>
                 <button class="btn-icon" onclick="resetTutorPw(${t.id},'${escHtml(t.username)}')" title="Cambiar contraseña">
                   <i data-lucide="key"></i>
                 </button>
@@ -683,6 +689,21 @@ document.getElementById('addTutorBtn')?.addEventListener('click', () => {
     loadTutores();
   });
 });
+
+function renameTutor(id, username) {
+  openModal(`Cambiar nombre de usuario: ${username}`, `
+    <div class="field-group">
+      <label>Nuevo nombre de usuario</label>
+      <input type="text" id="f-rename-user" value="${escHtml(username)}" autocomplete="off">
+    </div>
+  `, async () => {
+    const nuevo = document.getElementById('f-rename-user').value.trim()
+    if (!nuevo) return alert('Nombre de usuario requerido')
+    await api('PUT', `/api/admin/tutores/${id}/username`, { username: nuevo })
+    closeModal()
+    loadTutores()
+  })
+}
 
 function resetTutorPw(id, username) {
   openModal(`Cambiar contraseña: ${username}`, `
@@ -1022,7 +1043,7 @@ function deleteTeam(id, name) {
 // Global expose for inline onclick
 Object.assign(window, {
   editSession, deleteSession, addProject, editProject, deleteProject,
-  addAsset, editAsset, deleteAsset, deleteTutor, resetTutorPw,
+  addAsset, editAsset, deleteAsset, deleteTutor, resetTutorPw, renameTutor,
   editGalleryItem, deleteGalleryItem, editRanking, deleteRanking,
   editTeam, deleteTeam,
 });

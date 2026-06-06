@@ -24,7 +24,8 @@ const S3_PUBLIC_URL = (process.env.S3_PUBLIC_URL || '').replace(/\/$/, '')
 const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf)$/i
 
 const uploadsDir = path.join(__dirname, 'static', 'uploads')
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
+// Solo se usa disco local cuando NO hay S3 (en produccion las subidas van a S3)
+if (!S3_BUCKET && !fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 
 const fileFilter = (_, file, cb) => cb(null, ALLOWED_FILES.test(file.originalname))
 const uploadLimits = { fileSize: 25 * 1024 * 1024 }
@@ -150,11 +151,19 @@ db.exec(`
 // ─── Seeds ───────────────────────────────────────────
 
 if (!db.prepare('SELECT 1 FROM admin_users').get()) {
-  db.prepare('INSERT INTO admin_users (username, password_hash) VALUES (?,?)')
+  db.prepare('INSERT INTO admin_users (username, password_hash, is_super) VALUES (?,?,1)')
     .run('admin', bcrypt.hashSync('eiri2026', 10))
 }
 
 try { db.exec("ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT ''") } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN is_super INTEGER DEFAULT 0") } catch {}
+
+// Garantiza que exista al menos un administrador principal (super)
+if (!db.prepare('SELECT 1 FROM admin_users WHERE is_super=1').get()) {
+  const first = db.prepare("SELECT id FROM admin_users WHERE username='admin'").get()
+            || db.prepare('SELECT id FROM admin_users ORDER BY id LIMIT 1').get()
+  if (first) db.prepare('UPDATE admin_users SET is_super=1 WHERE id=?').run(first.id)
+}
 
 const configDefaults = {
   site_title:          'EIRI Talleres de Robótica',
@@ -197,8 +206,6 @@ function log(req, event, detail = '') {
     .run(event, detail, req.session.adminUser || 'anon', req.ip || '')
 }
 
-const SUPER_USER = 'admin' // cuenta principal protegida
-
 function requireAdmin(req, res, next) {
   if (!req.session.adminId) return res.status(401).json({ error: 'No autorizado' })
   next()
@@ -206,7 +213,7 @@ function requireAdmin(req, res, next) {
 
 function requireSuper(req, res, next) {
   if (!req.session.adminId) return res.status(401).json({ error: 'No autorizado' })
-  if (req.session.adminUser !== SUPER_USER) return res.status(403).json({ error: 'Solo el administrador principal puede gestionar cuentas' })
+  if (!req.session.adminSuper) return res.status(403).json({ error: 'Solo el administrador principal puede gestionar cuentas' })
   next()
 }
 
@@ -270,10 +277,11 @@ app.post('/api/admin/login', (req, res) => {
   const { username = '', password = '' } = req.body
   const user = db.prepare('SELECT * FROM admin_users WHERE username=?').get(username)
   if (user && bcrypt.compareSync(password, user.password_hash)) {
-    req.session.adminId   = user.id
-    req.session.adminUser = user.username
+    req.session.adminId    = user.id
+    req.session.adminUser  = user.username
+    req.session.adminSuper = !!user.is_super
     log(req, 'admin_login')
-    return res.json({ ok: true, username: user.username, is_super: user.username === SUPER_USER })
+    return res.json({ ok: true, username: user.username, is_super: !!user.is_super })
   }
   log(req, 'login_failed', username)
   res.status(401).json({ error: 'Credenciales incorrectas' })
@@ -286,7 +294,7 @@ app.post('/api/admin/logout', (req, res) => {
 
 app.get('/api/admin/me', (req, res) => {
   req.session.adminId
-    ? res.json({ logged_in: true, username: req.session.adminUser, is_super: req.session.adminUser === SUPER_USER })
+    ? res.json({ logged_in: true, username: req.session.adminUser, is_super: !!req.session.adminSuper })
     : res.json({ logged_in: false })
 })
 
@@ -425,7 +433,23 @@ app.put('/api/admin/password', requireAdmin, (req, res) => {
 // ─── Tutores ─────────────────────────────────────────
 
 app.get('/api/admin/tutores', requireSuper, (req, res) => {
-  res.json(db.prepare('SELECT id, username, created_at FROM admin_users ORDER BY id').all())
+  res.json(db.prepare('SELECT id, username, is_super, created_at FROM admin_users ORDER BY id').all())
+})
+
+app.put('/api/admin/tutores/:id/username', requireSuper, (req, res) => {
+  const username = (req.body.username || '').trim()
+  if (!username) return res.status(400).json({ error: 'Nombre de usuario requerido' })
+  const id   = parseInt(req.params.id)
+  const user = db.prepare('SELECT id FROM admin_users WHERE id=?').get(id)
+  if (!user) return res.status(404).json({ error: 'Cuenta no encontrada' })
+  try {
+    db.prepare('UPDATE admin_users SET username=? WHERE id=?').run(username, id)
+    if (id === req.session.adminId) req.session.adminUser = username
+    log(req, 'rename_tutor', `${id}:${username}`)
+    res.json({ ok: true })
+  } catch {
+    res.status(400).json({ error: 'Ese nombre de usuario ya existe' })
+  }
 })
 
 app.post('/api/admin/tutores', requireSuper, (req, res) => {
@@ -454,9 +478,12 @@ app.put('/api/admin/tutores/:id/password', requireSuper, (req, res) => {
 
 app.delete('/api/admin/tutores/:id', requireSuper, (req, res) => {
   const id   = parseInt(req.params.id)
-  const user = db.prepare('SELECT username FROM admin_users WHERE id=?').get(id)
+  const user = db.prepare('SELECT is_super FROM admin_users WHERE id=?').get(id)
   if (!user) return res.status(404).json({ error: 'Cuenta no encontrada' })
-  if (user.username === SUPER_USER) return res.status(400).json({ error: 'La cuenta principal no se puede eliminar' })
+  if (user.is_super) {
+    const supers = db.prepare('SELECT COUNT(*) AS c FROM admin_users WHERE is_super=1').get()
+    if (supers.c <= 1) return res.status(400).json({ error: 'Debe existir al menos un administrador principal' })
+  }
   db.prepare('DELETE FROM admin_users WHERE id=?').run(id)
   log(req, 'delete_tutor', id)
   res.json({ ok: true })

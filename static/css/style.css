@@ -181,7 +181,7 @@ button { cursor: pointer; }
   gap: 3.5rem;
 }
 
-.hero-content { text-align: left; padding-bottom: 2rem; }
+.hero-content { text-align: left; padding-bottom: 2rem; max-width: 600px; justify-self: center; }
 
 /* Carrusel de LEDs a la izquierda */
 .hero-carousel {
@@ -253,7 +253,7 @@ button { cursor: pointer; }
 .hero-title { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 1rem; }
 .glitch {
   font-family: var(--f-tech);
-  font-size: clamp(3rem,10vw,7.5rem);
+  font-size: clamp(2.6rem,6.5vw,5.2rem);
   font-weight: 900;
   color: var(--white);
   text-shadow: 0 0 40px rgba(33,150,243,0.55), 0 0 80px rgba(33,150,243,0.22);

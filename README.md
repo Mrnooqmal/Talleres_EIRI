@@ -3,6 +3,9 @@
 Portal de recursos para los talleres de robótica de EIRI (Universidad del Desarrollo).
 Los estudiantes acceden al material sin login; los tutores gestionan todo desde el panel de administración.
 
+**En producción:** http://34.234.41.122 (EC2 + S3/CloudFront en AWS, region us-east-1).
+Panel: http://34.234.41.122/admin/login
+
 ## Stack
 
 - **Node.js 24** + Express
@@ -29,8 +32,14 @@ Credenciales iniciales: `admin` / `eiri2026` (cambiar en el primer ingreso).
 ## Cuentas y roles
 
 - Todos los tutores tienen el mismo rol y pueden gestionar el contenido (sesiones, recursos, galería, ranking, equipos).
-- La cuenta `admin` es el **administrador principal**: solo ella crea y elimina cuentas de tutores, y no puede ser eliminada.
-- Los tutores cambian su propia contraseña desde la pantalla de login ("Cambiar mi contraseña") o desde Configuración.
+- El **administrador principal** (marcado con `is_super` en la base) es el único que crea, renombra, resetea contraseñas y elimina cuentas de tutores. No puede quedar el sistema sin al menos un admin principal.
+- Su nombre de usuario se puede cambiar libremente desde *Tutores* (el privilegio va por columna, no por nombre).
+
+### Cómo dar acceso a un tutor nuevo
+
+1. El admin principal entra a *Tutores → Nuevo tutor* y define un usuario + contraseña temporal.
+2. Le pasa esas credenciales al tutor.
+3. El tutor entra en `/admin/login` y usa *"Cambiar mi contraseña"* para poner la suya.
 
 ## Despliegue en AWS
 
@@ -67,6 +76,21 @@ SSH_KEY_FILE=~/.ssh/tu_llave.pem bash scripts/deploy.sh
 Para HTTPS con dominio propio: apunta el DNS a la Elastic IP y luego `sudo certbot --nginx -d tudominio.com`.
 
 Para destruir todo: `cd terraform && terraform destroy`.
+
+### Actualizar el sitio (deploy de cambios)
+
+El despliegue es por **git**: la instancia clona el repo público y hace `git pull`. Tras hacer `git push` a `main`:
+
+```bash
+# Opcion A: script (recomendado). Hace fetch + checkout + npm ci + pm2 restart.
+SSH_KEY_FILE=/home/adrean/aws/adrean_cchc.pem bash scripts/deploy.sh
+
+# Opcion B: manual por SSH
+ssh -i /home/adrean/aws/adrean_cchc.pem ubuntu@34.234.41.122
+cd /opt/eiri && git pull && npm ci --omit=dev && pm2 restart eiri && pm2 save
+```
+
+El `.env`, la base `eiri.db` y `static/uploads/` se conservan (no están en git).
 
 ### Almacenamiento y persistencia
 
