@@ -214,7 +214,9 @@ button { cursor: pointer; }
   width: clamp(260px, 32vw, 400px);
   height: auto;
   filter: drop-shadow(0 0 52px var(--glow)) drop-shadow(0 0 90px var(--glow));
+  animation: ledFloat 4s ease-in-out infinite;
 }
+@keyframes ledFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 .carousel-dots {
   position: absolute;
   bottom: 0.5rem;
@@ -1078,12 +1080,22 @@ button { cursor: pointer; }
 @media (max-width: 900px) {
   .about-grid { grid-template-columns: 1fr; gap: 3rem; }
   .footer-tagline { max-width: none; }
-  .hero-inner { grid-template-columns: 1fr; gap: 1.5rem; padding: calc(var(--header-h) + 1rem) 2rem 2.5rem; }
-  .hero-content { text-align: center; padding-bottom: 0; max-width: 640px; margin: 0 auto; }
+  /* Hero apilado y centrado (flex en vez de grid para centrar parejo) */
+  .hero-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
+    padding: calc(var(--header-h) + 1rem) 1.25rem 2.5rem;
+  }
+  .hero-carousel { order: 1; width: 100%; height: 320px; }
+  .hero-content { order: 2; max-width: 100%; padding-bottom: 0; text-align: center; }
+  .hero-kicker, .hero-meta, .hero-desc { margin-left: auto; margin-right: auto; }
+  .hero-desc { max-width: 520px; margin-bottom: 2rem; }
   .hero-cta { justify-content: center; }
-  .hero-desc { margin: 0 auto 2rem; }
-  .hero-carousel { order: -1; height: 320px; }
-  .carousel-led { width: clamp(200px, 42vw, 300px); }
+  .hero-scroll-cue { display: none; }
+  .carousel-led { width: clamp(200px, 46vw, 300px); }
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .rankings-layout { grid-template-columns: 1fr; gap: 2.5rem; }
 }
