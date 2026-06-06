@@ -173,7 +173,7 @@ button { cursor: pointer; }
   position: relative;
   z-index: 10;
   display: grid;
-  grid-template-columns: 480px 1fr;
+  grid-template-columns: 480px minmax(0, 1fr);
   align-items: center;
   width: 100%;
   max-width: 1280px;
@@ -181,7 +181,7 @@ button { cursor: pointer; }
   gap: 3.5rem;
 }
 
-.hero-content { text-align: left; padding-bottom: 2rem; max-width: 600px; justify-self: center; }
+.hero-content { text-align: left; padding-bottom: 2rem; max-width: 600px; min-width: 0; justify-self: center; }
 
 /* Carrusel de LEDs a la izquierda */
 .hero-carousel {
@@ -255,7 +255,8 @@ button { cursor: pointer; }
 .hero-title { display: flex; flex-direction: column; gap: 0.15rem; margin-bottom: 1rem; }
 .glitch {
   font-family: var(--f-tech);
-  font-size: clamp(2.6rem,6.5vw,5.2rem);
+  font-size: clamp(2.4rem,5vw,4.4rem);
+  overflow-wrap: anywhere;
   font-weight: 900;
   color: var(--white);
   text-shadow: 0 0 40px rgba(33,150,243,0.55), 0 0 80px rgba(33,150,243,0.22);
@@ -1072,8 +1073,8 @@ button { cursor: pointer; }
 
 /* Tablet horizontal: aprieta un poco las dos columnas del hero */
 @media (max-width: 1100px) {
-  .hero-inner { grid-template-columns: 400px 1fr; gap: 2.5rem; }
-  .carousel-led { width: clamp(220px, 30vw, 320px); }
+  .hero-inner { grid-template-columns: 340px minmax(0, 1fr); gap: 2rem; padding-left: 2rem; padding-right: 2rem; }
+  .carousel-led { width: clamp(220px, 28vw, 300px); }
 }
 
 /* Tablet / colapso a una columna */
