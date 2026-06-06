@@ -214,11 +214,53 @@ function buildAsset(asset) {
 }
 
 function buildProject(project) {
+  const slideAssets   = project.assets.filter(a => a.type === 'slides'  && !a.is_locked);
   const codeAssets    = project.assets.filter(a => a.type === 'code'    && !a.is_locked);
   const diagramAssets = project.assets.filter(a => a.type === 'diagram' && !a.is_locked);
-  const linkAssets    = project.assets.filter(a => !['code','diagram'].includes(a.type) && !a.is_locked);
+  const otherAssets   = project.assets.filter(a => !['slides', 'code', 'diagram'].includes(a.type) && !a.is_locked);
   const lockedAssets  = project.assets.filter(a => a.is_locked);
 
+  // Si hay un PDF, se renderiza de forma especial
+  if (slideAssets.length > 0) {
+    const mainSlide = slideAssets[0];
+    const otherSlides = slideAssets.slice(1);
+
+    const allOtherAssets = [...otherSlides, ...codeAssets, ...diagramAssets, ...otherAssets];
+
+    const mainContentHTML = buildAsset(mainSlide);
+    const secondaryContentHTML = allOtherAssets.length > 0
+      ? `<div class="project-card-assets secondary">
+          <h4 class="other-assets-title">Otros recursos del proyecto</h4>
+          ${otherAssets.map(buildAsset).join('')}
+          ${codeAssets.map(buildAsset).join('')}
+          ${diagramAssets.map(buildAsset).join('')}
+          ${otherSlides.map(buildAsset).join('')}
+        </div>`
+      : '';
+    const lockedHTML = lockedAssets.map(buildAsset).join('');
+
+    const tagsHTML = project.tags
+      ? project.tags.split(',').map(t => t.trim()).filter(Boolean).map(t =>
+          `<span class="project-tag" onclick="filterByTag('${t.replace(/'/g,"\\'")}')">#${t}</span>`).join('')
+      : '';
+
+    return `
+      <div class="project-card project-card-split">
+        <div class="project-card-head">
+          <div class="project-card-title">${project.title}</div>
+          ${project.description ? `<div class="project-card-desc">${project.description}</div>` : ''}
+          ${tagsHTML ? `<div class="project-tags">${tagsHTML}</div>` : ''}
+        </div>
+        <div class="project-card-main-asset">
+          ${mainContentHTML}
+        </div>
+        ${secondaryContentHTML}
+        <div class="project-card-assets">${lockedHTML}</div>
+      </div>`;
+  }
+
+  // Renderizado normal si no hay PDF
+  const linkAssets = [...otherAssets];
   const codeHTML    = codeAssets.map(buildAsset).join('');
   const diagramHTML = diagramAssets.map(buildAsset).join('');
   const linkHTML    = linkAssets.length
@@ -263,13 +305,13 @@ function buildSession(session) {
     ? `<p class="acc-session-desc">${session.description}</p>` : '';
 
   return `
-    <div class="acc-session" data-sid="${session.id}">
+    <div class="acc-session" data-sid="${session.id}" data-status="${session.status}">
       <div class="acc-session-head">
         <span class="acc-session-num">SESIÓN ${String(session.number).padStart(2,'0')}</span>
         <span class="acc-session-title">${session.title}</span>
-        <span class="acc-session-date">${session.date_text}</span>
+        <span class="acc-session-date">${session.date_text || ''}</span>
         <span class="acc-session-badge ${b.cls}">
-          <i data-lucide="${b.icon}"></i>
+          <i data-lucide="="${b.icon}""></i>
           ${b.text}
         </span>
         <span class="acc-chevron"><i data-lucide="chevron-down"></i></span>
