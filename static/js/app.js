@@ -295,7 +295,7 @@ const STATUS_BADGE = {
 };
 
 function buildSession(session) {
-  const b = STATUS_BADGE[session.status] || STATUS_BADGE.upcoming;
+  const b = STATUS_BADGE[session.status];
 
   const projectsHTML = session.projects.length
     ? `<div class="projects-list">${session.projects.map(buildProject).join('')}</div>`
@@ -306,16 +306,19 @@ function buildSession(session) {
 
   const dateText = (session.date_text && session.date_text.toLowerCase() !== 'por definir') ? session.date_text : '';
 
+  const badgeHTML = b ? `
+    <span class="acc-session-badge ${b.cls}">
+      <i data-lucide="${b.icon}"></i>
+      ${b.text}
+    </span>` : '';
+
   return `
-    <div class="acc-session" data-sid="${session.id}" data-status="${session.status}">
+    <div class="acc-session" data-sid="${session.id}" data-status="${session.status || ''}">
       <div class="acc-session-head">
         <span class="acc-session-num">SESIÓN ${String(session.number).padStart(2,'0')}</span>
         <span class="acc-session-title">${session.title}</span>
         <span class="acc-session-date">${dateText}</span>
-        <span class="acc-session-badge ${b.cls}">
-          <i data-lucide="${b.icon}"></i>
-          ${b.text}
-        </span>
+        ${badgeHTML}
         <span class="acc-chevron"><i data-lucide="chevron-down"></i></span>
       </div>
       <div class="acc-session-body">
