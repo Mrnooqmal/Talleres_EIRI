@@ -471,13 +471,17 @@ function bindAssetFileHandlers() {
   const imgInput  = document.getElementById('f-file-img')
   const ta        = document.getElementById('f-content')
   const status    = document.getElementById('f-upload-status')
+  const saveBtn   = document.getElementById('modalSave')
 
   if (codeInput) {
     codeInput.addEventListener('change', async () => {
       const file = codeInput.files[0]; if (!file) return
+      status.textContent = `Cargando: ${file.name}...`
+      saveBtn.disabled = true
       const text = await file.text()
       ta.value = text
       status.textContent = `Cargado: ${file.name}`
+      saveBtn.disabled = false
     })
   }
 
@@ -485,6 +489,7 @@ function bindAssetFileHandlers() {
     imgInput.addEventListener('change', async () => {
       const file = imgInput.files[0]; if (!file) return
       status.textContent = 'Subiendo...'
+      saveBtn.disabled = true
       const fd = new FormData()
       fd.append('file', file)
       try {
@@ -495,6 +500,8 @@ function bindAssetFileHandlers() {
         status.textContent = `Subido: ${data.name}`
       } catch (e) {
         status.textContent = `Error: ${e.message}`
+      } finally {
+        saveBtn.disabled = false
       }
     })
   }
