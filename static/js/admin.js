@@ -600,6 +600,18 @@ document.getElementById('savePwBtn')?.addEventListener('click', async () => {
   }
 });
 
+// Convierte una fecha UTC de SQLite ("YYYY-MM-DD HH:MM:SS") a hora de Chile
+function fmtFechaCL(s) {
+  if (!s) return '';
+  const d = new Date(s.replace(' ', 'T').replace('Z', '') + 'Z'); // interpreta como UTC
+  if (isNaN(d)) return s;
+  return d.toLocaleString('es-CL', {
+    timeZone: 'America/Santiago',
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+}
+
 // Logs
 async function loadLogs() {
   const tbody = document.getElementById('logsBody');
@@ -609,7 +621,7 @@ async function loadLogs() {
     if (!logs.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim)">Sin registros</td></tr>'; return; }
     tbody.innerHTML = logs.map(l => `
       <tr>
-        <td>${l.created_at?.replace('T',' ').slice(0,19) || ''}</td>
+        <td>${fmtFechaCL(l.created_at)}</td>
         <td>${escHtml(l.event)}</td>
         <td>${escHtml(l.detail)}</td>
         <td>${escHtml(l.user)}</td>
