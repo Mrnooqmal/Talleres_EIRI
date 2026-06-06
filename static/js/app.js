@@ -161,13 +161,16 @@ function buildAsset(asset) {
   }
 
   if (asset.type === 'diagram') {
+    const src = String(asset.content).replace(/'/g, "\\'");
+    const lbl = String(asset.label).replace(/'/g, "\\'");
     return `
       <div class="asset-diagram">
         <div class="asset-diagram-bar">
           <i data-lucide="cpu"></i>
           <span>${asset.label}</span>
         </div>
-        <img src="${asset.content}" alt="${asset.label}" loading="lazy">
+        <img src="${asset.content}" alt="${asset.label}" loading="lazy"
+          onclick="openLightbox('${src}','${lbl}',false)" title="Ampliar imagen">
       </div>`;
   }
 

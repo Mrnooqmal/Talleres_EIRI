@@ -658,7 +658,10 @@ button { cursor: pointer; }
   object-fit: contain;
   background: #0a0f1a;
   display: block;
+  cursor: zoom-in;
+  transition: opacity 0.18s;
 }
+.asset-diagram img:hover { opacity: 0.85; }
 
 /* Link assets (slides, video, model3d, link) */
 .asset-links { display: flex; flex-wrap: wrap; gap: 0.6rem; }
@@ -1007,9 +1010,6 @@ button { cursor: pointer; }
   gap: 4rem;
   align-items: start;
 }
-.teams-col {}
-.activities-col {}
-
 /* Teams table */
 .teams-table {
   width: 100%;
