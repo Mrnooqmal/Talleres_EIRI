@@ -318,69 +318,85 @@ input, textarea, select { font-family: var(--f-body); font-size: 0.9rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; display: inline-block; }
 
+/* Botón hamburguesa y backdrop del cajón (ocultos en escritorio) */
+.menu-toggle { display: none; }
+.adm-sidebar-backdrop { display: none; }
+.menu-toggle svg { width: 20px; height: 20px; display: block; }
+
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .config-sections { grid-template-columns: 1fr; }
-  .adm-main { padding: 1.5rem 1rem; margin-left: 0; padding-top: 4rem; }
-  .adm-sidebar {
-    width: 100%;
-    height: auto;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: auto;
-    flex-direction: row;
-    align-items: center;
-    padding: 0 1rem;
-    z-index: 100;
-  }
-  .adm-brand { padding: 0.75rem 0; border: none; }
-  .adm-nav { flex-direction: row; padding: 0; flex: 1; gap: 0; }
-  .adm-nav-item span { display: none; }
-  .adm-sidebar-foot { flex-direction: row; padding: 0; border: none; margin-left: auto; }
 }
 
 @media (max-width: 768px) {
-    .adm-sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        position: fixed;
-        z-index: 1000;
-        height: 100%;
-    }
+  /* Sidebar como cajón deslizable */
+  .adm-sidebar {
+    width: 250px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    z-index: 1000;
+  }
+  .adm-sidebar.open { transform: translateX(0); }
 
-    .adm-sidebar.open {
-        transform: translateX(0);
-    }
+  /* Backdrop oscuro cuando el cajón está abierto */
+  .adm-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  .adm-sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
 
-    .adm-main {
-        margin-left: 0;
-        padding: 1.5rem;
-    }
+  /* Botón hamburguesa fijo */
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0.85rem;
+    left: 0.85rem;
+    z-index: 1001;
+    background: var(--bg-card);
+    border: 1px solid var(--border-md);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: var(--text);
+  }
 
-    .adm-view-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+  .adm-main {
+    margin-left: 0;
+    padding: 4rem 1rem 2rem;
+  }
 
-    .menu-toggle {
-        display: block;
-        position: fixed;
-        top: 1rem;
-        left: 1rem;
-        z-index: 1001;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
+  .adm-view-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .adm-view-header .btn-primary,
+  .adm-view-header .btn-ghost { align-self: flex-start; }
+
+  /* Encabezado de sesión: que no se desborde en pantallas chicas */
+  .session-item-head { flex-wrap: wrap; }
+  .si-title { flex-basis: 100%; order: -1; }
+  .si-num { order: -2; }
+
+  /* Tablas con scroll horizontal */
+  .logs-table { min-width: 540px; }
+  #galleryList, #rankingsList, #teamsList, #tutoresList { overflow-x: auto; }
 }
 
-@media (min-width: 769px) {
-    .menu-toggle {
-        display: none;
-    }
+@media (max-width: 420px) {
+  html { font-size: 14px; }
+  .adm-main { padding: 3.75rem 0.75rem 1.5rem; }
+  .si-date { display: none; }
 }
 
 .assets-grid {

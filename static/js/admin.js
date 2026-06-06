@@ -1212,17 +1212,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.adm-sidebar');
+    const sidebar    = document.querySelector('.adm-sidebar');
+    const backdrop   = document.querySelector('.adm-sidebar-backdrop');
+    if (!menuToggle || !sidebar) return;
 
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
+    const setOpen = (open) => {
+        sidebar.classList.toggle('open', open);
+        backdrop?.classList.toggle('open', open);
+    };
 
-        document.addEventListener('click', (e) => {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target) && sidebar.classList.contains('open')) {
-                sidebar.classList.remove('open');
-            }
-        });
-    }
+    menuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(!sidebar.classList.contains('open'));
+    });
+
+    backdrop?.addEventListener('click', () => setOpen(false));
+
+    // Cerrar el cajón al elegir una sección (mejor UX en móvil)
+    sidebar.querySelectorAll('.adm-nav-item[data-view]').forEach(btn => {
+        btn.addEventListener('click', () => setOpen(false));
+    });
+
+    // Cerrar con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpen(false);
+    });
 });
