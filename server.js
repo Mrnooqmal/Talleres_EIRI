@@ -476,6 +476,16 @@ app.put('/api/admin/tutores/:id/password', requireSuper, (req, res) => {
   res.json({ ok: true })
 })
 
+app.put('/api/admin/tutores/:id/super', requireSuper, (req, res) => {
+  const id   = parseInt(req.params.id)
+  const user = db.prepare('SELECT id, username FROM admin_users WHERE id=?').get(id)
+  if (!user) return res.status(404).json({ error: 'Cuenta no encontrada' })
+  db.prepare('UPDATE admin_users SET is_super=1 WHERE id=?').run(id)
+  if (id === req.session.adminId) req.session.adminSuper = true
+  log(req, 'make_super_admin', `${id}:${user.username}`)
+  res.json({ ok: true })
+})
+
 app.delete('/api/admin/tutores/:id', requireSuper, (req, res) => {
   const id   = parseInt(req.params.id)
   const user = db.prepare('SELECT is_super FROM admin_users WHERE id=?').get(id)

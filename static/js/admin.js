@@ -546,11 +546,11 @@ function bindAssetFileHandlers() {
         }
       }
       
-      ta.value = urls[0];
-      status.textContent = `Subido: ${files[0].name}`;
-      if (files.length > 1) {
-        status.textContent = `${files.length} archivos subidos. Solo se usó la URL del primero.`;
-      }
+      // Una URL por línea: si hay varias, addAsset crea un recurso por cada una.
+      ta.value = urls.join('\n');
+      status.textContent = files.length > 1
+        ? `${files.length} archivos subidos. Se creará un recurso por cada imagen al guardar.`
+        : `Subido: ${files[0].name}`;
       saveBtn.disabled = false;
     });
   }
@@ -567,7 +567,17 @@ function addAsset(projectId, sessionId) {
       is_locked:  document.getElementById('f-locked').checked,
     };
     if (!data.label) return alert('Etiqueta requerida');
-    await api('POST', '/api/admin/assets', data);
+    // Para diagramas con varias imágenes subidas (una URL por línea) creamos un recurso por cada una.
+    const urls = data.type === 'diagram'
+      ? data.content.split('\n').map(u => u.trim()).filter(Boolean)
+      : [];
+    if (urls.length > 1) {
+      for (let i = 0; i < urls.length; i++) {
+        await api('POST', '/api/admin/assets', { ...data, content: urls[i], label: `${data.label} ${i + 1}` });
+      }
+    } else {
+      await api('POST', '/api/admin/assets', data);
+    }
     closeModal();
     loadAssets(projectId);
   });
@@ -798,6 +808,13 @@ function resetTutorPw(id, username) {
   })
 }
 
+function makeSuperAdmin(id, username) {
+  confirm('Hacer Admin Principal', `¿Otorgar privilegios de administrador principal a "${username}"? Podrá gestionar tutores y configuración.`, async () => {
+    await api('PUT', `/api/admin/tutores/${id}/super`)
+    loadTutores()
+  })
+}
+
 function deleteTutor(id, username) {
   confirm('Eliminar tutor', `¿Eliminar la cuenta de "${username}"? Esta acción no se puede deshacer.`, async () => {
     await api('DELETE', `/api/admin/tutores/${id}`);
@@ -908,19 +925,11 @@ function bindGalleryUpload() {
       }
     }
     
-    urlEl.value = urls.join('\\n'); // Use newline as separator for multiple URLs
-    status.textContent = `${files.length} archivos subidos.`;
-    
-    if (files.length === 1) {
-        urlEl.value = urls[0];
-    } else {
-        // If multiple files, we need a way to create multiple gallery items.
-        // For now, let's just put the first URL in the box and notify the user.
-        urlEl.value = urls[0];
-        status.textContent = `${files.length} archivos subidos. El primer archivo es ${urls[0]}. Por favor, guarda y añade los otros manualmente.`;
-        // A better UX would be to automatically create multiple gallery item forms.
-        // This is a bigger change, so for now we'll stick to this.
-    }
+    // Una URL por línea: si hay varias, se crea una entrada de galería por cada una al guardar.
+    urlEl.value = urls.join('\n');
+    status.textContent = files.length > 1
+      ? `${files.length} archivos subidos. Se creará una entrada por cada imagen al guardar.`
+      : `Subido: ${files[0].name}`;
   });
 }
 
@@ -934,7 +943,19 @@ document.getElementById('addGalleryItemBtn')?.addEventListener('click', () => {
       order_index: parseInt(document.getElementById('f-gal-order').value) || 0,
     };
     if (!payload.title || !payload.url) return alert('Título y URL requeridos');
-    await api('POST', '/api/admin/gallery', payload);
+    // Una URL por línea: si se subieron varias imágenes creamos una entrada por cada una.
+    const urls = payload.url.split('\n').map(u => u.trim()).filter(Boolean);
+    if (urls.length > 1) {
+      for (let i = 0; i < urls.length; i++) {
+        await api('POST', '/api/admin/gallery', {
+          ...payload, url: urls[i],
+          title: `${payload.title} ${i + 1}`,
+          order_index: payload.order_index + i,
+        });
+      }
+    } else {
+      await api('POST', '/api/admin/gallery', payload);
+    }
     closeModal();
     loadGalleryAdmin();
   });
@@ -1136,7 +1157,7 @@ function deleteTeam(id, name) {
 // Global expose for inline onclick
 Object.assign(window, {
   editSession, deleteSession, addProject, editProject, deleteProject,
-  addAsset, editAsset, deleteAsset, deleteTutor, resetTutorPw, renameTutor,
+  addAsset, editAsset, deleteAsset, deleteTutor, resetTutorPw, renameTutor, makeSuperAdmin,
   editGalleryItem, deleteGalleryItem, editRanking, deleteRanking,
   editTeam, deleteTeam,
 });

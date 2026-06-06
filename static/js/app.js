@@ -213,6 +213,13 @@ function buildAsset(asset) {
     </a>`;
 }
 
+// Agrupa los diagramas/imágenes en una grilla compacta en vez de apilarlos.
+function buildDiagramGrid(diagramAssets) {
+  if (!diagramAssets.length) return '';
+  const cls = diagramAssets.length > 1 ? 'asset-diagram-grid multi' : 'asset-diagram-grid';
+  return `<div class="${cls}">${diagramAssets.map(buildAsset).join('')}</div>`;
+}
+
 function buildProject(project) {
   const slideAssets   = project.assets.filter(a => a.type === 'slides'  && !a.is_locked);
   const codeAssets    = project.assets.filter(a => a.type === 'code'    && !a.is_locked);
@@ -233,7 +240,7 @@ function buildProject(project) {
           <h4 class="other-assets-title">Otros recursos del proyecto</h4>
           ${otherAssets.map(buildAsset).join('')}
           ${codeAssets.map(buildAsset).join('')}
-          ${diagramAssets.map(buildAsset).join('')}
+          ${buildDiagramGrid(diagramAssets)}
           ${otherSlides.map(buildAsset).join('')}
         </div>`
       : '';
@@ -247,22 +254,27 @@ function buildProject(project) {
     return `
       <div class="project-card project-card-split">
         <div class="project-card-head">
-          <div class="project-card-title">${project.title}</div>
-          ${project.description ? `<div class="project-card-desc">${project.description}</div>` : ''}
-          ${tagsHTML ? `<div class="project-tags">${tagsHTML}</div>` : ''}
+          <div class="project-card-head-main">
+            <div class="project-card-title">${project.title}</div>
+            ${project.description ? `<div class="project-card-desc">${project.description}</div>` : ''}
+            ${tagsHTML ? `<div class="project-tags">${tagsHTML}</div>` : ''}
+          </div>
+          <span class="project-card-chevron"><i data-lucide="chevron-down"></i></span>
         </div>
-        <div class="project-card-main-asset">
-          ${mainContentHTML}
+        <div class="project-card-body">
+          <div class="project-card-main-asset">
+            ${mainContentHTML}
+          </div>
+          ${secondaryContentHTML}
+          <div class="project-card-assets">${lockedHTML}</div>
         </div>
-        ${secondaryContentHTML}
-        <div class="project-card-assets">${lockedHTML}</div>
       </div>`;
   }
 
   // Renderizado normal si no hay PDF
   const linkAssets = [...otherAssets];
   const codeHTML    = codeAssets.map(buildAsset).join('');
-  const diagramHTML = diagramAssets.map(buildAsset).join('');
+  const diagramHTML = buildDiagramGrid(diagramAssets);
   const linkHTML    = linkAssets.length
     ? `<div class="asset-links">${linkAssets.map(buildAsset).join('')}</div>` : '';
   const lockedHTML  = lockedAssets.map(buildAsset).join('');
@@ -275,15 +287,20 @@ function buildProject(project) {
   return `
     <div class="project-card">
       <div class="project-card-head">
-        <div class="project-card-title">${project.title}</div>
-        ${project.description ? `<div class="project-card-desc">${project.description}</div>` : ''}
-        ${tagsHTML ? `<div class="project-tags">${tagsHTML}</div>` : ''}
+        <div class="project-card-head-main">
+          <div class="project-card-title">${project.title}</div>
+          ${project.description ? `<div class="project-card-desc">${project.description}</div>` : ''}
+          ${tagsHTML ? `<div class="project-tags">${tagsHTML}</div>` : ''}
+        </div>
+        <span class="project-card-chevron"><i data-lucide="chevron-down"></i></span>
       </div>
-      <div class="project-card-assets">
-        ${codeHTML}
-        ${diagramHTML}
-        ${linkHTML}
-        ${lockedHTML}
+      <div class="project-card-body">
+        <div class="project-card-assets">
+          ${codeHTML}
+          ${diagramHTML}
+          ${linkHTML}
+          ${lockedHTML}
+        </div>
       </div>
     </div>`;
 }
@@ -352,6 +369,14 @@ async function loadSessions() {
       });
     });
 
+    // Cada proyecto se abre individualmente; no todos a la vez al abrir la sesión.
+    container.querySelectorAll('.project-card-head').forEach(head => {
+      head.addEventListener('click', e => {
+        if (e.target.closest('.project-tag')) return;
+        head.closest('.project-card').classList.toggle('open');
+      });
+    });
+
     const active = container.querySelector('.acc-session [data-status="active"]');
     if (active) active.closest('.acc-session').classList.add('open');
 
@@ -415,8 +440,11 @@ function applySearch() {
       const textMatch = !q || title.includes(q) || desc.includes(q) || sessText.includes(q) || cardTags.some(t => t.includes(q))
       const tagMatch  = tags.length === 0 || tags.every(t => cardTags.includes(t))
 
-      card.style.display = (textMatch && tagMatch) ? '' : 'none'
-      if (textMatch && tagMatch) sessVisible = true
+      const match = textMatch && tagMatch
+      card.style.display = match ? '' : 'none'
+      // Al filtrar, abre los proyectos coincidentes para que se vean los resultados.
+      card.classList.toggle('open', match && (!!q || tags.length > 0))
+      if (match) sessVisible = true
     })
 
     if (!cards.length) sessVisible = !q || sessText.includes(q)
