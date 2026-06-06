@@ -90,7 +90,7 @@ El despliegue es por **git**: la instancia clona el repo público y hace `git pu
 SSH_KEY_FILE=/home/adrean/aws/adrean_cchc.pem bash scripts/deploy.sh
 
 # Opcion B: manual por SSH
-ssh -i /home/adrean/aws/adrean_cchc.pem ubuntu@34.234.41.122
+ssh -i /home/adrean/aws/adrean_cchc.pem ubuntu@34.234.41.122                
 cd /opt/eiri && git pull && npm ci --omit=dev && pm2 restart eiri && pm2 save
 ```
 

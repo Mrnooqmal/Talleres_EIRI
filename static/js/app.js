@@ -304,14 +304,16 @@ function buildSession(session) {
   const descHTML = session.description
     ? `<p class="acc-session-desc">${session.description}</p>` : '';
 
+  const dateText = (session.date_text && session.date_text.toLowerCase() !== 'por definir') ? session.date_text : '';
+
   return `
     <div class="acc-session" data-sid="${session.id}" data-status="${session.status}">
       <div class="acc-session-head">
         <span class="acc-session-num">SESIÓN ${String(session.number).padStart(2,'0')}</span>
         <span class="acc-session-title">${session.title}</span>
-        <span class="acc-session-date">${session.date_text || ''}</span>
+        <span class="acc-session-date">${dateText}</span>
         <span class="acc-session-badge ${b.cls}">
-          <i data-lucide="="${b.icon}""></i>
+          <i data-lucide="${b.icon}"></i>
           ${b.text}
         </span>
         <span class="acc-chevron"><i data-lucide="chevron-down"></i></span>
