@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin EIRI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<div class="adm-layout">
+
+    <!-- ── Sidebar ── -->
+    <aside class="adm-sidebar">
+        <div class="adm-brand">
+            <span class="adm-eiri">EIRI</span>
+            <span class="adm-user">{{ username }}</span>
+        </div>
+
+        <nav class="adm-nav">
+            <button class="adm-nav-item active" data-view="sessions">
+                <i data-lucide="layers"></i>
+                <span>Sesiones</span>
+            </button>
+            <button class="adm-nav-item" data-view="config">
+                <i data-lucide="settings"></i>
+                <span>Configuración</span>
+            </button>
+            <button class="adm-nav-item" data-view="gallery">
+                <i data-lucide="image"></i>
+                <span>Galería</span>
+            </button>
+            <button class="adm-nav-item" data-view="teams">
+                <i data-lucide="shield"></i>
+                <span>Equipos</span>
+            </button>
+            <button class="adm-nav-item" data-view="rankings">
+                <i data-lucide="trophy"></i>
+                <span>Ranking</span>
+            </button>
+            <button class="adm-nav-item" data-view="tutores">
+                <i data-lucide="users"></i>
+                <span>Tutores</span>
+            </button>
+            <button class="adm-nav-item" data-view="logs">
+                <i data-lucide="activity"></i>
+                <span>Registros</span>
+            </button>
+        </nav>
+
+        <div class="adm-sidebar-foot">
+            <a href="/" class="adm-nav-item" target="_blank">
+                <i data-lucide="external-link"></i>
+                <span>Ver sitio</span>
+            </a>
+            <button class="adm-nav-item adm-logout" id="logoutBtn">
+                <i data-lucide="log-out"></i>
+                <span>Salir</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ── Main ── -->
+    <main class="adm-main">
+
+        <!-- Sessions view -->
+        <div id="view-sessions" class="adm-view active">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Sesiones</h2>
+                    <p class="adm-sub">Gestiona el programa de talleres y sus recursos</p>
+                </div>
+                <button class="btn-primary" id="addSessionBtn">
+                    <i data-lucide="plus"></i> Nueva sesión
+                </button>
+            </div>
+            <div id="sessionsList" class="sessions-list"></div>
+        </div>
+
+        <!-- Config view -->
+        <div id="view-config" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Configuración</h2>
+                    <p class="adm-sub">Personaliza el contenido del sitio</p>
+                </div>
+            </div>
+
+            <div class="config-sections">
+                <div class="config-card">
+                    <h3>Contenido del sitio</h3>
+                    <div class="field-group">
+                        <label>Título del sitio</label>
+                        <input type="text" id="cfg-site_title">
+                    </div>
+                    <div class="field-group">
+                        <label>Subtítulo / Evento</label>
+                        <input type="text" id="cfg-subtitle">
+                    </div>
+                    <div class="field-group">
+                        <label>Descripción en hero</label>
+                        <textarea id="cfg-hero_description" rows="3"></textarea>
+                    </div>
+                    <div class="field-group">
+                        <label>Texto sección "Quiénes somos"</label>
+                        <textarea id="cfg-about_description" rows="3"></textarea>
+                    </div>
+                    <div class="field-group">
+                        <label>Año</label>
+                        <input type="text" id="cfg-year" style="max-width:120px">
+                    </div>
+                    <div class="field-group">
+                        <label>Contacto (email u otro)</label>
+                        <input type="text" id="cfg-contact" placeholder="eiri@udd.cl">
+                    </div>
+                    <button class="btn-primary" id="saveCfgBtn">
+                        <i data-lucide="save"></i> Guardar cambios
+                    </button>
+                    <p class="cfg-feedback" id="cfgFeedback"></p>
+                </div>
+
+                <div class="config-card">
+                    <h3>Redes sociales</h3>
+                    <div class="field-group">
+                        <label>Instagram (URL)</label>
+                        <input type="text" id="cfg-social_instagram" placeholder="https://instagram.com/eiri_udd">
+                    </div>
+                    <div class="field-group">
+                        <label>GitHub (URL)</label>
+                        <input type="text" id="cfg-social_github" placeholder="https://github.com/eiri-udd">
+                    </div>
+                    <div class="field-group">
+                        <label>Discord (URL invite)</label>
+                        <input type="text" id="cfg-social_discord" placeholder="https://discord.gg/...">
+                    </div>
+                    <div class="field-group">
+                        <label>Email</label>
+                        <input type="text" id="cfg-social_email" placeholder="eiri@udd.cl">
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <h3>Cambiar contraseña</h3>
+                    <div class="field-group">
+                        <label>Contraseña actual</label>
+                        <input type="password" id="pw-current">
+                    </div>
+                    <div class="field-group">
+                        <label>Nueva contraseña</label>
+                        <input type="password" id="pw-new">
+                    </div>
+                    <div class="field-group">
+                        <label>Confirmar</label>
+                        <input type="password" id="pw-confirm">
+                    </div>
+                    <button class="btn-primary" id="savePwBtn">
+                        <i data-lucide="lock"></i> Actualizar contraseña
+                    </button>
+                    <p class="cfg-feedback" id="pwFeedback"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teams view -->
+        <div id="view-teams" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Equipos</h2>
+                    <p class="adm-sub">Equipos participantes del torneo</p>
+                </div>
+                <button class="btn-primary" id="addTeamBtn">
+                    <i data-lucide="plus"></i> Nuevo equipo
+                </button>
+            </div>
+            <div id="teamsList"></div>
+        </div>
+
+        <!-- Gallery view -->
+        <div id="view-gallery" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Galería</h2>
+                    <p class="adm-sub">Fotos y videos de los talleres</p>
+                </div>
+                <button class="btn-primary" id="addGalleryBtn">
+                    <i data-lucide="plus"></i> Agregar
+                </button>
+            </div>
+            <div id="galleryList"></div>
+        </div>
+
+        <!-- Rankings view -->
+        <div id="view-rankings" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Ranking</h2>
+                    <p class="adm-sub">Podio global y resultados por sesión</p>
+                </div>
+                <button class="btn-primary" id="addRankingBtn">
+                    <i data-lucide="plus"></i> Agregar entrada
+                </button>
+            </div>
+            <div id="rankingsList"></div>
+        </div>
+
+        <!-- Tutores view -->
+        <div id="view-tutores" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Tutores</h2>
+                    <p class="adm-sub">Cuentas con acceso al panel de administración</p>
+                </div>
+                <button class="btn-primary" id="addTutorBtn">
+                    <i data-lucide="user-plus"></i> Nuevo tutor
+                </button>
+            </div>
+            <div id="tutoresList"></div>
+        </div>
+
+        <!-- Logs view -->
+        <div id="view-logs" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Registros</h2>
+                    <p class="adm-sub">Actividad reciente del sistema</p>
+                </div>
+                <button class="btn-ghost" id="refreshLogsBtn">
+                    <i data-lucide="refresh-cw"></i> Actualizar
+                </button>
+            </div>
+            <div class="logs-wrap">
+                <table class="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Evento</th>
+                            <th>Detalle</th>
+                            <th>Usuario</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ── Modal ── -->
+<div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modal" role="dialog">
+        <div class="modal-head">
+            <h3 id="modalTitle"></h3>
+            <button class="modal-x" id="modalClose"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot">
+            <button class="btn-ghost" id="modalCancel">Cancelar</button>
+            <button class="btn-primary" id="modalSave">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Confirm ── -->
+<div class="modal-backdrop" id="confirmBackdrop">
+    <div class="modal modal--sm" id="confirmModal">
+        <div class="modal-head">
+            <h3 id="confirmTitle">Confirmar</h3>
+        </div>
+        <div class="modal-body">
+            <p id="confirmMsg"></p>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-ghost" id="confirmCancel">Cancelar</button>
+            <button class="btn-danger" id="confirmOk">Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/admin.js"></script>
+</body>
+</html>

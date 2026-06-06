@@ -1,0 +1,17 @@
+node_modules/
+eiri.db
+eiri.db-shm
+eiri.db-wal
+.env
+*.pem
+*.log
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log

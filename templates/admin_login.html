@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin EIRI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body class="login-body">
+
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-logos">
+                <img src="/static/logo_udd.svg" alt="UDD" class="login-logo-udd">
+            </div>
+
+            <div class="login-brand">
+                <span class="login-eiri">EIRI</span>
+                <span class="login-panel-label">Panel de Administración</span>
+            </div>
+
+            <form id="loginForm" class="login-form" autocomplete="on">
+                <div class="field-group">
+                    <label for="loginUser">Usuario</label>
+                    <input type="text" id="loginUser" name="username"
+                           autocomplete="username" placeholder="admin" required>
+                </div>
+                <div class="field-group">
+                    <label for="loginPass">Contraseña</label>
+                    <input type="password" id="loginPass" name="password"
+                           autocomplete="current-password" required>
+                </div>
+                <p class="login-error" id="loginError"></p>
+                <button type="submit" class="login-btn" id="loginBtn">Ingresar</button>
+                <button type="button" class="login-link-btn" id="showChange">Cambiar mi contraseña</button>
+            </form>
+
+            <form id="changeForm" class="login-form" autocomplete="off" hidden>
+                <div class="field-group">
+                    <label for="chUser">Usuario</label>
+                    <input type="text" id="chUser" autocomplete="username" placeholder="tu usuario">
+                </div>
+                <div class="field-group">
+                    <label for="chCurrent">Contraseña actual</label>
+                    <input type="password" id="chCurrent" autocomplete="current-password">
+                </div>
+                <div class="field-group">
+                    <label for="chNew">Nueva contraseña</label>
+                    <input type="password" id="chNew" autocomplete="new-password">
+                </div>
+                <div class="field-group">
+                    <label for="chConfirm">Confirmar nueva contraseña</label>
+                    <input type="password" id="chConfirm" autocomplete="new-password">
+                </div>
+                <p class="login-error" id="changeMsg"></p>
+                <button type="submit" class="login-btn" id="changeBtn">Actualizar contraseña</button>
+                <button type="button" class="login-link-btn" id="backToLogin">Volver al ingreso</button>
+            </form>
+
+            <a href="/" class="login-back">Volver al sitio</a>
+        </div>
+    </div>
+
+    <script>
+        const loginForm  = document.getElementById('loginForm');
+        const changeForm = document.getElementById('changeForm');
+
+        document.getElementById('showChange').addEventListener('click', () => {
+            loginForm.hidden = true;
+            changeForm.hidden = false;
+        });
+        document.getElementById('backToLogin').addEventListener('click', () => {
+            changeForm.hidden = true;
+            loginForm.hidden = false;
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+            btn.textContent = 'Ingresando...';
+            btn.disabled = true;
+            err.textContent = '';
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('loginUser').value,
+                        password: document.getElementById('loginPass').value,
+                    }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.href = '/admin';
+                } else {
+                    err.textContent = data.error || 'Error al iniciar sesión';
+                    btn.textContent = 'Ingresar';
+                    btn.disabled = false;
+                }
+            } catch {
+                err.textContent = 'Error de conexión';
+                btn.textContent = 'Ingresar';
+                btn.disabled = false;
+            }
+        });
+
+        changeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('changeBtn');
+            const msg = document.getElementById('changeMsg');
+            const newPw  = document.getElementById('chNew').value;
+            const confPw = document.getElementById('chConfirm').value;
+            msg.classList.remove('ok');
+            if (newPw !== confPw) { msg.textContent = 'Las contraseñas no coinciden'; return; }
+            if (newPw.length < 6) { msg.textContent = 'La nueva contraseña debe tener al menos 6 caracteres'; return; }
+            btn.textContent = 'Actualizando...';
+            btn.disabled = true;
+            msg.textContent = '';
+            try {
+                const res = await fetch('/api/admin/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('chUser').value,
+                        current: document.getElementById('chCurrent').value,
+                        new: newPw,
+                    }),
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    msg.textContent = 'Contraseña actualizada. Ya puedes ingresar.';
+                    msg.classList.add('ok');
+                    changeForm.reset();
+                } else {
+                    msg.textContent = data.error || 'No se pudo actualizar';
+                }
+            } catch {
+                msg.textContent = 'Error de conexión';
+            }
+            btn.textContent = 'Actualizar contraseña';
+            btn.disabled = false;
+        });
+    </script>
+</body>
+</html>
