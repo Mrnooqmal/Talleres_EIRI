@@ -331,7 +331,7 @@ app.post('/api/admin/login', (req, res) => {
     req.session.adminSuper = !!user.is_super
     const loginIp = req.ip || ''
     if (loginIp) {
-      db.prepare('INSERT OR REPLACE INTO tutor_ips (ip, username, updated_at) VALUES (?,?,datetime("now"))')
+      db.prepare('INSERT OR REPLACE INTO tutor_ips (ip, username) VALUES (?,?)')
         .run(loginIp, user.username)
     }
     log(req, 'admin_login')
