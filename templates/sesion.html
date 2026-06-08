@@ -15,7 +15,7 @@
 </head>
 <body class="sesion-page">
 
-<!-- Datos de la sesión para el JS -->
+<!-- Datos de sesión para el JS -->
 <script>
 window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 </script>
@@ -23,32 +23,18 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 <!-- Barra de progreso de lectura -->
 <div class="ses-progress-bar" id="sesProgressBar"></div>
 
-<!-- ── Topbar ── -->
-<header class="ses-topbar">
-    <div class="ses-topbar-inner">
-        <a href="/" class="ses-brand">
-            <span class="ses-brand-eiri">EIRI</span>
-            <span class="ses-brand-sub">Talleres de Robótica</span>
-        </a>
+<!-- Header del sitio -->
+{% set nav_prefix = '/' %}
+{% include "partials/_site_header.html" %}
 
-        <nav class="ses-breadcrumb" aria-label="Ubicación">
-            <a href="/" class="ses-bc-link"><i data-lucide="home"></i><span>Inicio</span></a>
-            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
-            <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
-            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
-            <span class="ses-bc-current">Sesión {{ session.num_padded }}</span>
-        </nav>
-
-        <button class="ses-index-toggle" id="indexToggle" aria-label="Mostrar índice">
-            <i data-lucide="layout-list"></i>
-            <span>Índice</span>
-        </button>
-    </div>
-</header>
+<!-- Botón FAB para abrir índice en móvil -->
+<button class="ses-index-fab" id="indexToggle" aria-label="Mostrar índice de proyectos">
+    <i data-lucide="layout-list"></i>
+</button>
 
 <div class="ses-layout">
 
-    <!-- ── Sidebar índice ── -->
+    <!-- ── Sidebar índice (fijo) ── -->
     <aside class="ses-sidebar" id="sesSidebar">
         <div class="ses-sidebar-inner">
             <div class="ses-sidebar-head">
@@ -90,6 +76,15 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
     <!-- ── Contenido principal ── -->
     <main class="ses-main" id="sesMain">
 
+        <!-- Breadcrumb -->
+        <nav class="ses-breadcrumb" aria-label="Ubicación">
+            <a href="/" class="ses-bc-link"><i data-lucide="home"></i><span>Inicio</span></a>
+            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+            <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
+            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+            <span class="ses-bc-current">Sesión {{ session.num_padded }}</span>
+        </nav>
+
         <!-- Cabecera de la sesión -->
         <div class="ses-hero">
             <div class="ses-hero-meta">
@@ -111,7 +106,7 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
             {% endif %}
         </div>
 
-        <!-- Proyectos (estructura estática server-side, assets inyectados por JS) -->
+        <!-- Proyectos -->
         {% if session.projects %}
         <div class="ses-projects">
             {% for p in session.projects %}
@@ -144,7 +139,7 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
         </div>
         {% endif %}
 
-        <!-- Navegación inferior -->
+        <!-- Nav inferior -->
         <div class="ses-footer-nav">
             <a href="/#sesiones" class="btn btn-ghost-outline ses-back-btn">
                 <i data-lucide="arrow-left"></i>
@@ -155,6 +150,8 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 
 </div>
 
+{% include "partials/_footer.html" %}
+
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
@@ -162,12 +159,12 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="/static/js/app.js"></script>
 <script src="/static/js/sesion.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
 
-    // Inyectar assets en cada proyecto desde los datos embebidos
     (window.SESSION_PROJECTS || []).forEach(p => {
         const el = document.getElementById('ses-assets-' + p.id);
         if (!el) return;

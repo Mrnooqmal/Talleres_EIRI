@@ -210,12 +210,20 @@ function initSesion() {
                 indexItems.forEach(item => {
                     item.classList.toggle('active', item.dataset.pid === pid);
                 });
-                // Scroll del índice para mostrar el ítem activo
-                const active = document.querySelector(`.ses-index-item[data-pid="${pid}"]`);
-                active?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                // Scroll del SIDEBAR (no del body) para mostrar el ítem activo
+                const sidebarEl  = document.getElementById('sesSidebar');
+                const activeItem = document.querySelector(`.ses-index-item[data-pid="${pid}"]`);
+                if (activeItem && sidebarEl) {
+                    const itemTop  = activeItem.offsetTop;
+                    const sidH     = sidebarEl.clientHeight;
+                    const sidScroll = sidebarEl.scrollTop;
+                    if (itemTop < sidScroll + 40 || itemTop > sidScroll + sidH - 80) {
+                        sidebarEl.scrollTo({ top: Math.max(0, itemTop - sidH / 2), behavior: 'smooth' });
+                    }
+                }
             }
         });
-    }, { threshold: 0.25, rootMargin: '-60px 0px -40% 0px' });
+    }, { threshold: 0.2, rootMargin: '-56px 0px -35% 0px' });
 
     projects.forEach(p => observer.observe(p));
 }

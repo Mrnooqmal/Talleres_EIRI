@@ -2,58 +2,29 @@
 
 :root {
   --ses-sidebar-w: 260px;
-  --ses-topbar-h: 56px;
 }
 
 body.sesion-page { overflow-x: hidden; }
 
-/* ─── Topbar ──────────────────────────────────────────── */
-.ses-topbar {
+/* ─── Barra de progreso ───────────────────────────────── */
+.ses-progress-bar {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  height: var(--ses-topbar-h);
-  background: rgba(4, 8, 15, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(33,150,243,0.15);
-  z-index: 200;
-}
-.ses-topbar-inner {
-  max-width: 1600px;
-  margin: 0 auto;
-  height: 100%;
-  padding: 0 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(to right, var(--blue-400), var(--blue-200));
+  z-index: 1100;
+  transition: width 0.08s linear;
+  pointer-events: none;
 }
 
-.ses-brand {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-  flex-shrink: 0;
-  text-decoration: none;
-}
-.ses-brand-eiri {
-  font-family: var(--f-tech);
-  font-size: 0.9rem;
-  font-weight: 900;
-  color: #42A5F5;
-  letter-spacing: 0.22em;
-}
-.ses-brand-sub {
-  font-size: 0.58rem;
-  color: var(--text-dim);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
+/* ─── Breadcrumb ──────────────────────────────────────── */
 .ses-breadcrumb {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
-  min-width: 0;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
 }
 .ses-bc-link {
   display: inline-flex;
@@ -70,53 +41,45 @@ body.sesion-page { overflow-x: hidden; }
 .ses-bc-sep       { width: 13px; height: 13px; color: rgba(255,255,255,0.2); flex-shrink: 0; }
 .ses-bc-current   { font-size: 0.8rem; color: var(--white); font-weight: 600; font-family: var(--f-tech); letter-spacing: 0.08em; white-space: nowrap; }
 
-/* Botón índice (solo móvil) */
-.ses-index-toggle {
+/* ─── FAB para índice (solo móvil) ────────────────────── */
+.ses-index-fab {
   display: none;
-  align-items: center;
-  gap: 0.4rem;
-  background: rgba(33,150,243,0.1);
-  border: 1px solid rgba(33,150,243,0.25);
-  border-radius: 8px;
-  color: var(--blue-300);
-  font-size: 0.78rem;
-  padding: 0.4rem 0.75rem;
-  cursor: pointer;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: all 0.18s;
-}
-.ses-index-toggle svg { width: 15px; height: 15px; }
-.ses-index-toggle:hover { background: rgba(33,150,243,0.18); }
-
-/* ─── Barra de progreso ───────────────────────────────── */
-.ses-progress-bar {
   position: fixed;
-  top: 0; left: 0;
-  height: 3px;
-  width: 0%;
-  background: linear-gradient(to right, var(--blue-400), var(--blue-200));
-  z-index: 400;
-  transition: width 0.08s linear;
-  pointer-events: none;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 150;
+  width: 50px; height: 50px;
+  align-items: center;
+  justify-content: center;
+  background: var(--blue-400);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(33,150,243,0.45);
+  transition: transform 0.18s, box-shadow 0.18s;
 }
+.ses-index-fab:hover { transform: scale(1.08); box-shadow: 0 6px 30px rgba(33,150,243,0.6); }
+.ses-index-fab svg { width: 20px; height: 20px; }
 
 /* ─── Layout ──────────────────────────────────────────── */
+/* Sidebar es position:fixed; main se aleja con margin-left */
 .ses-layout {
-  display: grid;
-  grid-template-columns: var(--ses-sidebar-w) 1fr;
   min-height: 100vh;
-  padding-top: var(--ses-topbar-h);
+  padding-top: var(--header-h);   /* empuja debajo del header fijo del sitio */
 }
 
-/* ─── Sidebar ─────────────────────────────────────────── */
+/* ─── Sidebar (fijo) ──────────────────────────────────── */
 .ses-sidebar {
-  position: sticky;
-  top: var(--ses-topbar-h);
-  height: calc(100vh - var(--ses-topbar-h));
+  position: fixed;
+  top: var(--nav-h);              /* se alinea con la altura del nav colapsado */
+  left: 0;
+  width: var(--ses-sidebar-w);
+  height: calc(100vh - var(--nav-h));
   overflow-y: auto;
   background: rgba(8,14,26,0.97);
   border-right: 1px solid rgba(33,150,243,0.12);
+  z-index: 50;
   scrollbar-width: thin;
   scrollbar-color: rgba(33,150,243,0.2) transparent;
 }
@@ -251,8 +214,9 @@ body.sesion-page { overflow-x: hidden; }
 
 /* ─── Main ────────────────────────────────────────────── */
 .ses-main {
+  margin-left: var(--ses-sidebar-w);
   padding: 2.5rem 3rem 4rem;
-  min-width: 0; /* evita desbordamiento en grid */
+  min-width: 0;
 }
 
 /* ─── Hero de la sesión ───────────────────────────────── */
@@ -316,7 +280,8 @@ body.sesion-page { overflow-x: hidden; }
 .ses-projects { display: flex; flex-direction: column; gap: 3rem; }
 
 .ses-project {
-  scroll-margin-top: calc(var(--ses-topbar-h) + 1.5rem);
+  /* offset = nav colapsado + margen de lectura */
+  scroll-margin-top: calc(var(--nav-h) + 1.5rem);
 }
 .ses-project-head {
   display: flex;
@@ -380,7 +345,7 @@ body.sesion-page { overflow-x: hidden; }
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  scroll-margin-top: calc(var(--ses-topbar-h) + 1.25rem);
+  scroll-margin-top: calc(var(--nav-h) + 1.25rem);
 }
 
 .ses-assets { display: flex; flex-direction: column; gap: 1.25rem; }
@@ -414,14 +379,16 @@ body.sesion-page { overflow-x: hidden; }
 
 /* ─── Responsive ──────────────────────────────────────── */
 @media (max-width: 960px) {
-  .ses-index-toggle { display: inline-flex; }
+  /* Mostrar FAB para abrir el índice */
+  .ses-index-fab { display: flex; }
 
-  /* Vuelve a layout de una columna; el sidebar sale del flujo */
-  .ses-layout { grid-template-columns: 1fr; }
+  /* El main ocupa toda la anchura; el sidebar ya no empuja */
+  .ses-main { margin-left: 0; padding: 2rem 1.25rem 3rem; }
+  .ses-breadcrumb { display: none; }
 
+  /* Sidebar se convierte en drawer lateral */
   .ses-sidebar {
-    position: fixed;
-    top: 0; left: 0;
+    top: 0;
     width: min(var(--ses-sidebar-w), 82vw);
     height: 100vh;
     z-index: 200;
@@ -430,14 +397,9 @@ body.sesion-page { overflow-x: hidden; }
   }
   .ses-sidebar.open { transform: translateX(0); }
   .ses-sidebar-backdrop { display: block; }
-
-  .ses-main { padding: 2rem 1.25rem 3rem; }
-  .ses-breadcrumb { display: none; }
 }
 
 @media (max-width: 560px) {
-  .ses-topbar-inner { gap: 0.75rem; padding: 0 1rem; }
-  .ses-brand-sub { display: none; }
   .ses-main { padding: 1.5rem 1rem 3rem; }
   .ses-hero-title { font-size: 1.4rem; }
   .ses-project-head { flex-direction: column; gap: 0.5rem; }
