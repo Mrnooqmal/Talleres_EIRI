@@ -1,11 +1,11 @@
 // Página de detalle de sesión
 
-// ─── Render de assets ─────────────────────────────────
-
+// ─── Helpers ──────────────────────────────────────────
 function escHtml(str) {
     return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── Render de assets ─────────────────────────────────
 // Agrupa assets por tipo preservando orden de aparición,
 // envuelve cada grupo en un div con anchor para el índice.
 function renderSesionAssets(assets, locked, pid) {
@@ -25,7 +25,7 @@ function renderSesionAssets(assets, locked, pid) {
             html += `<div class="${cls}">`;
             items.forEach(a => { html += buildDiagramHTML(a); });
             html += '</div>';
-        } else if (['video','link','model3d'].includes(type)) {
+        } else if (type === 'link') {
             html += `<div class="asset-links">`;
             items.forEach(a => { html += buildAssetHTML(a); });
             html += '</div>';
@@ -57,7 +57,52 @@ function buildDiagramHTML(a) {
       </div>`;
 }
 
-const ASSET_ICONS = { code:'code-2', diagram:'cpu', slides:'file-text', video:'play-circle', model3d:'package', link:'external-link' };
+function buildVideoHTML(a) {
+    const url = a.content || '';
+    const ytMatch    = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    const isDirect   = /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+
+    const bar = `<div class="asset-video-bar"><i data-lucide="play-circle"></i><span>${escHtml(a.label)}</span></div>`;
+
+    if (ytMatch) return `
+      <div class="asset-video">
+        ${bar}
+        <div class="asset-video-wrap">
+          <iframe src="https://www.youtube.com/embed/${ytMatch[1]}" frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>`;
+
+    if (vimeoMatch) return `
+      <div class="asset-video">
+        ${bar}
+        <div class="asset-video-wrap">
+          <iframe src="https://player.vimeo.com/video/${vimeoMatch[1]}" frameborder="0"
+            allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+        </div>
+      </div>`;
+
+    if (isDirect) return `
+      <div class="asset-video">
+        ${bar}
+        <video controls class="asset-video-player" preload="metadata">
+          <source src="${escHtml(url)}">
+          Tu navegador no soporta video HTML5.
+        </video>
+      </div>`;
+
+    // URL no reconocida → enlace externo
+    return `
+      <a href="${escHtml(url)}" target="_blank" rel="noopener" class="asset-link-btn">
+        <i data-lucide="play-circle"></i>
+        <span>${escHtml(a.label)}</span>
+        <i data-lucide="arrow-up-right" class="asset-link-arrow"></i>
+      </a>`;
+}
+
+const SES_ASSET_ICONS = { code:'code-2', diagram:'cpu', slides:'file-text', video:'play-circle', model3d:'package', link:'external-link' };
 
 function buildAssetHTML(a) {
     if (a.type === 'code') {
@@ -76,6 +121,7 @@ function buildAssetHTML(a) {
           </div>`;
     }
     if (a.type === 'diagram') return buildDiagramHTML(a);
+    if (a.type === 'video')   return buildVideoHTML(a);
     if (a.type === 'slides') {
         const isPDF = /\.pdf$/i.test(a.content) || a.content.includes('/uploads/');
         if (isPDF) return `
@@ -89,6 +135,19 @@ function buildAssetHTML(a) {
             </div>
             <iframe src="${escHtml(a.content)}" class="pdf-embed" title="${escHtml(a.label)}" loading="lazy"></iframe>
           </div>`;
+        // URL de Google Slides / presentación externa
+        return `
+          <div class="asset-pdf">
+            <div class="asset-pdf-bar">
+              <i data-lucide="file-text"></i>
+              <span>${escHtml(a.label)}</span>
+              <a href="${escHtml(a.content)}" target="_blank" rel="noopener" class="pdf-open-link">
+                <i data-lucide="external-link"></i> Abrir
+              </a>
+            </div>
+            <iframe src="${escHtml(a.content)}" class="pdf-embed" title="${escHtml(a.label)}" loading="lazy"
+              allow="autoplay"></iframe>
+          </div>`;
     }
     if (a.type === 'markdown') {
         const html = typeof DOMPurify !== 'undefined'
@@ -100,7 +159,7 @@ function buildAssetHTML(a) {
             <div class="markdown-body">${html}</div>
           </div>`;
     }
-    const icon = ASSET_ICONS[a.type] || 'external-link';
+    const icon = SES_ASSET_ICONS[a.type] || 'external-link';
     return `
       <a href="${escHtml(a.content)}" target="_blank" rel="noopener" class="asset-link-btn">
         <i data-lucide="${icon}"></i>
@@ -164,9 +223,34 @@ function copyProjectLink(pid) {
     });
 }
 
+// ─── Navbar del sitio (scroll collapse + mobile toggle) ─
+function initNavbar() {
+    const header = document.getElementById('siteHeader');
+    const burger = document.getElementById('navBurger');
+    const mobile = document.getElementById('navMobile');
+    if (!header) return;
+
+    window.addEventListener('scroll', () => {
+        header.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
+
+    burger?.addEventListener('click', () => {
+        const open = mobile.classList.toggle('open');
+        burger.classList.toggle('open', open);
+    });
+    mobile?.querySelectorAll('.nav-m-link').forEach(l => {
+        l.addEventListener('click', () => {
+            mobile.classList.remove('open');
+            burger.classList.remove('open');
+        });
+    });
+}
+
 // ─── Sidebar índice y scroll activo ───────────────────
 function initSesion() {
-    // Toggle sidebar en móvil
+    initNavbar();
+
+    // Toggle sidebar en móvil (FAB)
     const toggleBtn = document.getElementById('indexToggle');
     const sidebar   = document.getElementById('sesSidebar');
     const backdrop  = document.getElementById('sesSidebarBackdrop');
@@ -199,7 +283,7 @@ function initSesion() {
     }
 
     // Resaltar ítem activo del índice al hacer scroll
-    const projects  = document.querySelectorAll('.ses-project');
+    const projects   = document.querySelectorAll('.ses-project');
     const indexItems = document.querySelectorAll('.ses-index-item');
     if (!projects.length || !indexItems.length) return;
 
@@ -210,12 +294,12 @@ function initSesion() {
                 indexItems.forEach(item => {
                     item.classList.toggle('active', item.dataset.pid === pid);
                 });
-                // Scroll del SIDEBAR (no del body) para mostrar el ítem activo
+                // Scroll del SIDEBAR (no del body) — evita el scroll fight
                 const sidebarEl  = document.getElementById('sesSidebar');
                 const activeItem = document.querySelector(`.ses-index-item[data-pid="${pid}"]`);
                 if (activeItem && sidebarEl) {
-                    const itemTop  = activeItem.offsetTop;
-                    const sidH     = sidebarEl.clientHeight;
+                    const itemTop   = activeItem.offsetTop;
+                    const sidH      = sidebarEl.clientHeight;
                     const sidScroll = sidebarEl.scrollTop;
                     if (itemTop < sidScroll + 40 || itemTop > sidScroll + sidH - 80) {
                         sidebarEl.scrollTo({ top: Math.max(0, itemTop - sidH / 2), behavior: 'smooth' });
