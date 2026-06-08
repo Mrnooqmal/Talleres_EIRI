@@ -18,44 +18,8 @@
 </head>
 <body>
 
-<header class="site-header" id="siteHeader">
-    <div class="header-logos">
-        <div class="header-logos-inner">
-            <img src="/static/logo_udd.svg" alt="Universidad del Desarrollo" class="header-logo-udd">
-            <span class="header-logo-sep"></span>
-            <img src="/static/logo_informatica.png" alt="Informática UDD" class="header-logo-inf">
-        </div>
-    </div>
-
-    <nav class="navbar" id="navbar">
-        <div class="nav-inner">
-            <a href="#home" class="nav-brand">
-                <span class="nav-eiri">EIRI</span>
-                <span class="nav-sub">Talleres de Robótica</span>
-            </a>
-
-            <ul class="nav-links">
-                <li><a href="#home">Inicio</a></li>
-                <li><a href="#sesiones">Sesiones</a></li>
-                <li><a href="#about">EIRI</a></li>
-                <li><a href="#ranking">Ranking</a></li>
-                <li><a href="#galeria">Galería</a></li>
-            </ul>
-
-            <button class="nav-burger" id="navBurger" aria-label="Menú">
-                <span></span><span></span><span></span>
-            </button>
-        </div>
-
-        <div class="nav-mobile" id="navMobile">
-            <a href="#home" class="nav-m-link">Inicio</a>
-            <a href="#sesiones" class="nav-m-link">Sesiones</a>
-            <a href="#about" class="nav-m-link">EIRI</a>
-            <a href="#ranking" class="nav-m-link">Ranking</a>
-            <a href="#galeria" class="nav-m-link">Galería</a>
-        </div>
-    </nav>
-</header>
+{% set nav_prefix = '' %}
+{% include "partials/_site_header.html" %}
 
 <section id="home" class="hero">
     <div class="hero-grid"></div>
@@ -270,60 +234,8 @@
     </div>
 </div>
 
-<footer class="footer">
-    <div class="container">
-        <div class="footer-main">
-            <div class="footer-logos">
-                <img src="/static/logo_udd.svg" alt="Universidad del Desarrollo" class="footer-logo-udd">
-                <span class="footer-logo-sep"></span>
-                <img src="/static/logo_informatica.png" alt="Informática UDD" class="footer-logo-inf">
-            </div>
-
-            <p class="footer-tagline">Con mucho amor, de parte del Equipo Interdisciplinario de Robótica e Innovación <3</p>
-
-            <nav class="footer-nav">
-                <a href="#home">Inicio</a>
-                <a href="#sesiones">Sesiones</a>
-                <a href="#about">EIRI</a>
-                <a href="#ranking">Ranking</a>
-                <a href="#galeria">Galería</a>
-            </nav>
-
-            <div class="footer-socials">
-                {% if config.social_instagram %}
-                <a href="{{ config.social_instagram }}" target="_blank" rel="noopener" class="social-link" title="Instagram"><i data-lucide="instagram"></i></a>
-                {% endif %}
-                {% if config.social_discord %}
-                <a href="{{ config.social_discord }}" target="_blank" rel="noopener" class="social-link" title="Discord"><i data-lucide="message-circle"></i></a>
-                {% endif %}
-                {% if config.social_github %}
-                <a href="{{ config.social_github }}" target="_blank" rel="noopener" class="social-link" title="GitHub"><i data-lucide="github"></i></a>
-                {% endif %}
-                {% if config.social_email %}
-                <a href="mailto:{{ config.social_email }}" class="social-link" title="Email"><i data-lucide="mail"></i></a>
-                {% endif %}
-            </div>
-
-            <div class="footer-mascots">
-                <img src="/static/led_verde.png"    alt="" class="fm fm-1">
-                <img src="/static/led_azul.png"     alt="" class="fm fm-2">
-                <img src="/static/led_amarillo.png" alt="" class="fm fm-3">
-                <img src="/static/led_morado.png"   alt="" class="fm fm-4">
-                <img src="/static/led_naranjo.png"  alt="" class="fm fm-5">
-                <img src="/static/led_rojo.png"     alt="" class="fm fm-6">
-            </div>
-        </div>
-
-        <div class="footer-bottom">
-            <p>© {{ config.year or '2026' }} EIRI, Universidad del Desarrollo. Desarrollado por
-                <a href="https://linkedin.com/in/adrean-torres-fonseca/" target="_blank" rel="noopener" class="footer-author">Adrean Torres Fonseca</a>.
-            </p>
-            <a href="/admin/login" class="footer-admin-link" aria-label="Panel de administración">
-                <i data-lucide="shield"></i>
-            </a>
-        </div>
-    </div>
-</footer>
+{% set nav_prefix = '' %}
+{% include "partials/_footer.html" %}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>

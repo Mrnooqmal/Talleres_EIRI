@@ -1,0 +1,57 @@
+{# Partial: footer del sitio público.
+   Requiere `config` en el contexto del template padre. #}
+{% set p = nav_prefix if nav_prefix is defined else '/' %}
+<footer class="footer">
+    <div class="container">
+        <div class="footer-main">
+            <div class="footer-logos">
+                <img src="/static/logo_udd.svg" alt="Universidad del Desarrollo" class="footer-logo-udd">
+                <span class="footer-logo-sep"></span>
+                <img src="/static/logo_informatica.png" alt="Informática UDD" class="footer-logo-inf">
+            </div>
+
+            <p class="footer-tagline">Con mucho amor, de parte del Equipo Interdisciplinario de Robótica e Innovación &lt;3</p>
+
+            <nav class="footer-nav">
+                <a href="{{ p }}#home">Inicio</a>
+                <a href="{{ p }}#sesiones">Sesiones</a>
+                <a href="{{ p }}#about">EIRI</a>
+                <a href="{{ p }}#ranking">Ranking</a>
+                <a href="/galeria">Galería</a>
+            </nav>
+
+            <div class="footer-socials">
+                {% if config.social_instagram %}
+                <a href="{{ config.social_instagram }}" target="_blank" rel="noopener" class="social-link" title="Instagram"><i data-lucide="instagram"></i></a>
+                {% endif %}
+                {% if config.social_discord %}
+                <a href="{{ config.social_discord }}" target="_blank" rel="noopener" class="social-link" title="Discord"><i data-lucide="message-circle"></i></a>
+                {% endif %}
+                {% if config.social_github %}
+                <a href="{{ config.social_github }}" target="_blank" rel="noopener" class="social-link" title="GitHub"><i data-lucide="github"></i></a>
+                {% endif %}
+                {% if config.social_email %}
+                <a href="mailto:{{ config.social_email }}" class="social-link" title="Email"><i data-lucide="mail"></i></a>
+                {% endif %}
+            </div>
+
+            <div class="footer-mascots">
+                <img src="/static/led_verde.png"    alt="" class="fm fm-1">
+                <img src="/static/led_azul.png"     alt="" class="fm fm-2">
+                <img src="/static/led_amarillo.png" alt="" class="fm fm-3">
+                <img src="/static/led_morado.png"   alt="" class="fm fm-4">
+                <img src="/static/led_naranjo.png"  alt="" class="fm fm-5">
+                <img src="/static/led_rojo.png"     alt="" class="fm fm-6">
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© {{ config.year or '2026' }} EIRI, Universidad del Desarrollo. Desarrollado por
+                <a href="https://linkedin.com/in/adrean-torres-fonseca/" target="_blank" rel="noopener" class="footer-author">Adrean Torres Fonseca</a>.
+            </p>
+            <a href="/admin/login" class="footer-admin-link" aria-label="Panel de administración">
+                <i data-lucide="shield"></i>
+            </a>
+        </div>
+    </div>
+</footer>

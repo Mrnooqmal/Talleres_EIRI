@@ -30,40 +30,7 @@
 </head>
 <body>
 
-<header class="site-header" id="siteHeader">
-    <div class="header-logos">
-        <div class="header-logos-inner">
-            <img src="/static/logo_udd.svg" alt="Universidad del Desarrollo" class="header-logo-udd">
-            <span class="header-logo-sep"></span>
-            <img src="/static/logo_informatica.png" alt="Informática UDD" class="header-logo-inf">
-        </div>
-    </div>
-    <nav class="navbar" id="navbar">
-        <div class="nav-inner">
-            <a href="/" class="nav-brand">
-                <span class="nav-eiri">EIRI</span>
-                <span class="nav-sub">Talleres de Robótica</span>
-            </a>
-            <ul class="nav-links">
-                <li><a href="/#home">Inicio</a></li>
-                <li><a href="/#sesiones">Sesiones</a></li>
-                <li><a href="/#about">EIRI</a></li>
-                <li><a href="/#ranking">Ranking</a></li>
-                <li><a href="/galeria">Galería</a></li>
-            </ul>
-            <button class="nav-burger" id="navBurger" aria-label="Menú">
-                <span></span><span></span><span></span>
-            </button>
-        </div>
-        <div class="nav-mobile" id="navMobile">
-            <a href="/#home" class="nav-m-link">Inicio</a>
-            <a href="/#sesiones" class="nav-m-link">Sesiones</a>
-            <a href="/#about" class="nav-m-link">EIRI</a>
-            <a href="/#ranking" class="nav-m-link">Ranking</a>
-            <a href="/galeria" class="nav-m-link">Galería</a>
-        </div>
-    </nav>
-</header>
+{% include "partials/_site_header.html" %}
 
 <div class="gallery-page-hero">
     <div class="container">
@@ -83,6 +50,8 @@
         </div>
     </div>
 </div>
+
+{% include "partials/_footer.html" %}
 
 <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
 <script src="/static/js/app.js"></script>

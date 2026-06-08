@@ -228,18 +228,34 @@ function requireSuper(req, res, next) {
 app.get('/', (req, res) => res.render('index.html', { config: getConfig() }))
 app.get('/galeria', (req, res) => res.render('galeria.html', { config: getConfig() }))
 
+const SES_TYPE_LABELS = { code: 'Código', slides: 'Presentación', diagram: 'Imágenes', video: 'Video', markdown: 'Notas', link: 'Enlace', model3d: 'Modelo 3D' }
+const SES_TYPE_ICONS  = { code: 'code-2', slides: 'file-text', diagram: 'image', video: 'play-circle', markdown: 'align-left', link: 'link-2', model3d: 'package' }
+
 app.get('/sesiones/:id', (req, res) => {
   const session = db.prepare('SELECT * FROM workshop_sessions WHERE id=?').get(req.params.id)
   if (!session) return res.status(404).send('Sesión no encontrada')
   const projects = db.prepare('SELECT * FROM projects WHERE session_id=? ORDER BY display_order').all(session.id)
   for (const p of projects) {
-    p.assets     = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=0 ORDER BY display_order').all(p.id)
-    p.locked     = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=1 ORDER BY display_order').all(p.id)
-    p.tags_list  = p.tags ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+    p.assets    = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=0 ORDER BY display_order').all(p.id)
+    p.locked    = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=1 ORDER BY display_order').all(p.id)
+    p.tags_list = p.tags ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : []
     p.asset_count = p.assets.length + p.locked.length
+    // Agrupar tipos para el índice del sidebar
+    const typeSeen = [], typeCounts = {}
+    for (const a of p.assets) {
+      if (!typeCounts[a.type]) typeSeen.push(a.type)
+      typeCounts[a.type] = (typeCounts[a.type] || 0) + 1
+    }
+    p.type_summary = typeSeen.map(type => ({
+      type, count: typeCounts[type],
+      icon:  SES_TYPE_ICONS[type]  || 'file',
+      label: SES_TYPE_LABELS[type] || type,
+      anchor: `project-${p.id}-${type}`,
+    }))
+    if (p.locked.length) p.type_summary.push({ type: 'locked', count: p.locked.length, icon: 'lock', label: 'Bloqueado', anchor: `project-${p.id}-locked` })
   }
-  session.projects    = projects
-  session.num_padded  = String(session.number).padStart(2, '0')
+  session.projects   = projects
+  session.num_padded = String(session.number).padStart(2, '0')
   log(req, 'view_session', session.id)
   res.render('sesion.html', { config: getConfig(), session })
 })

@@ -1,0 +1,42 @@
+{# Partial: cabecera del sitio público.
+   Usa nav_prefix para links: '' en la homepage, '/' en otras páginas.
+   Ejemplo: {% set nav_prefix = '' %} {% include "partials/_site_header.html" %} #}
+{% set p = nav_prefix if nav_prefix is defined else '/' %}
+<header class="site-header" id="siteHeader">
+    <div class="header-logos">
+        <div class="header-logos-inner">
+            <img src="/static/logo_udd.svg" alt="Universidad del Desarrollo" class="header-logo-udd">
+            <span class="header-logo-sep"></span>
+            <img src="/static/logo_informatica.png" alt="Informática UDD" class="header-logo-inf">
+        </div>
+    </div>
+
+    <nav class="navbar" id="navbar">
+        <div class="nav-inner">
+            <a href="{{ p }}#home" class="nav-brand">
+                <span class="nav-eiri">EIRI</span>
+                <span class="nav-sub">Talleres de Robótica</span>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="{{ p }}#home">Inicio</a></li>
+                <li><a href="{{ p }}#sesiones">Sesiones</a></li>
+                <li><a href="{{ p }}#about">EIRI</a></li>
+                <li><a href="{{ p }}#ranking">Ranking</a></li>
+                <li><a href="/galeria">Galería</a></li>
+            </ul>
+
+            <button class="nav-burger" id="navBurger" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+
+        <div class="nav-mobile" id="navMobile">
+            <a href="{{ p }}#home" class="nav-m-link">Inicio</a>
+            <a href="{{ p }}#sesiones" class="nav-m-link">Sesiones</a>
+            <a href="{{ p }}#about" class="nav-m-link">EIRI</a>
+            <a href="{{ p }}#ranking" class="nav-m-link">Ranking</a>
+            <a href="/galeria" class="nav-m-link">Galería</a>
+        </div>
+    </nav>
+</header>

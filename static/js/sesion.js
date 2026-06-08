@@ -1,40 +1,47 @@
 // Página de detalle de sesión
 
-// ─── Render de assets (mismo lógica que app.js) ───────
+// ─── Render de assets ─────────────────────────────────
 
 function escHtml(str) {
     return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function renderSesionAssets(assets, locked) {
-    const diagrams = assets.filter(a => a.type === 'diagram');
-    const code     = assets.filter(a => a.type === 'code');
-    const slides   = assets.filter(a => a.type === 'slides');
-    const others   = assets.filter(a => !['diagram','code','slides'].includes(a.type));
+// Agrupa assets por tipo preservando orden de aparición,
+// envuelve cada grupo en un div con anchor para el índice.
+function renderSesionAssets(assets, locked, pid) {
+    const typeOrder = [], byType = {};
+    for (const a of assets) {
+        if (!byType[a.type]) { byType[a.type] = []; typeOrder.push(a.type); }
+        byType[a.type].push(a);
+    }
 
     let html = '';
+    for (const type of typeOrder) {
+        const items = byType[type];
+        const id    = pid ? ` id="project-${pid}-${type}"` : '';
+        html += `<div class="ses-type-group"${id}>`;
+        if (type === 'diagram') {
+            const cls = items.length > 1 ? 'asset-diagram-grid multi' : 'asset-diagram-grid';
+            html += `<div class="${cls}">`;
+            items.forEach(a => { html += buildDiagramHTML(a); });
+            html += '</div>';
+        } else if (['video','link','model3d'].includes(type)) {
+            html += `<div class="asset-links">`;
+            items.forEach(a => { html += buildAssetHTML(a); });
+            html += '</div>';
+        } else {
+            items.forEach(a => { html += buildAssetHTML(a); });
+        }
+        html += '</div>';
+    }
 
-    if (slides.length) {
-        slides.forEach(a => { html += buildAssetHTML(a); });
-    }
-    if (code.length) {
-        code.forEach(a => { html += buildAssetHTML(a); });
-    }
-    if (diagrams.length) {
-        const cls = diagrams.length > 1 ? 'asset-diagram-grid multi' : 'asset-diagram-grid';
-        html += `<div class="${cls}">`;
-        diagrams.forEach(a => { html += buildDiagramHTML(a); });
-        html += '</div>';
-    }
-    if (others.length) {
-        html += `<div class="asset-links">`;
-        others.forEach(a => { html += buildAssetHTML(a); });
-        html += '</div>';
-    }
     if (locked.length) {
+        const id = pid ? ` id="project-${pid}-locked"` : '';
+        html += `<div class="ses-type-group"${id}>`;
         locked.forEach(a => {
             html += `<div class="asset-locked"><i data-lucide="lock"></i><span>${escHtml(a.label)}, disponible próximamente</span></div>`;
         });
+        html += '</div>';
     }
     return html;
 }
@@ -139,6 +146,24 @@ function openLightbox(url, title, isVideo) {
     setTimeout(() => lucide.createIcons({ nodes: [lb] }), 10);
 }
 
+// ─── Copiar enlace a proyecto ─────────────────────────
+function copyProjectLink(pid) {
+    const url = `${location.origin}${location.pathname}#project-${pid}`;
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = document.querySelector(`.ses-copy-link[onclick*="'${pid}'"]`);
+        if (!btn) return;
+        btn.classList.add('copied');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<svg data-lucide="check" width="13" height="13"></svg>';
+        lucide.createIcons({ nodes: [btn] });
+        setTimeout(() => {
+            btn.innerHTML = orig;
+            lucide.createIcons({ nodes: [btn] });
+            btn.classList.remove('copied');
+        }, 1800);
+    });
+}
+
 // ─── Sidebar índice y scroll activo ───────────────────
 function initSesion() {
     // Toggle sidebar en móvil
@@ -154,12 +179,24 @@ function initSesion() {
     backdrop?.addEventListener('click', () => setSidebarOpen(false));
     document.addEventListener('keydown', e => { if (e.key === 'Escape') setSidebarOpen(false); });
 
-    // Cerrar sidebar al hacer clic en un ítem del índice en móvil
-    document.querySelectorAll('.ses-index-item').forEach(item => {
+    // Cerrar sidebar al navegar en móvil
+    document.querySelectorAll('.ses-index-item, .ses-index-sub').forEach(item => {
         item.addEventListener('click', () => {
             if (window.innerWidth < 960) setSidebarOpen(false);
         });
     });
+
+    // Barra de progreso de lectura
+    const progressBar = document.getElementById('sesProgressBar');
+    if (progressBar) {
+        const updateProgress = () => {
+            const scrolled = document.documentElement.scrollTop;
+            const total    = document.documentElement.scrollHeight - window.innerHeight;
+            progressBar.style.width = total > 0 ? `${(scrolled / total) * 100}%` : '0%';
+        };
+        window.addEventListener('scroll', updateProgress, { passive: true });
+        updateProgress();
+    }
 
     // Resaltar ítem activo del índice al hacer scroll
     const projects  = document.querySelectorAll('.ses-project');
@@ -183,6 +220,7 @@ function initSesion() {
     projects.forEach(p => observer.observe(p));
 }
 
-window.copyCode    = copyCode;
-window.openLightbox = openLightbox;
+window.copyCode           = copyCode;
+window.openLightbox       = openLightbox;
 window.renderSesionAssets = renderSesionAssets;
+window.copyProjectLink    = copyProjectLink;

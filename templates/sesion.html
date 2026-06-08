@@ -20,6 +20,9 @@
 window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 </script>
 
+<!-- Barra de progreso de lectura -->
+<div class="ses-progress-bar" id="sesProgressBar"></div>
+
 <!-- ── Topbar ── -->
 <header class="ses-topbar">
     <div class="ses-topbar-inner">
@@ -58,11 +61,23 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
 
             <nav class="ses-index" id="sesIndex">
                 {% for p in session.projects %}
-                <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
-                    <span class="ses-index-num">{{ loop.index }}</span>
-                    <span class="ses-index-name">{{ p.title }}</span>
-                    <span class="ses-index-count">{{ p.asset_count }}</span>
-                </a>
+                <div class="ses-index-group" data-pid="{{ p.id }}">
+                    <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
+                        <span class="ses-index-num">{{ loop.index }}</span>
+                        <span class="ses-index-name">{{ p.title }}</span>
+                        {% if p.asset_count %}<span class="ses-index-count">{{ p.asset_count }}</span>{% endif %}
+                    </a>
+                    {% if p.type_summary %}
+                    <div class="ses-index-subs">
+                        {% for t in p.type_summary %}
+                        <a href="#{{ t.anchor }}" class="ses-index-sub">
+                            <i data-lucide="{{ t.icon }}"></i>
+                            <span>{{ t.label }}{% if t.count > 1 %} ({{ t.count }}){% endif %}</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
                 {% else %}
                 <p class="ses-index-empty">Sin proyectos aún.</p>
                 {% endfor %}
@@ -114,6 +129,9 @@ window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
                         </div>
                         {% endif %}
                     </div>
+                    <button class="ses-copy-link" onclick="copyProjectLink('{{ p.id }}')" title="Copiar enlace a este proyecto">
+                        <i data-lucide="link"></i>
+                    </button>
                 </div>
                 <div class="ses-assets" id="ses-assets-{{ p.id }}"></div>
             </section>
@@ -157,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.innerHTML = '<p class="ses-no-assets">Sin recursos publicados aún.</p>';
             return;
         }
-        el.innerHTML = renderSesionAssets(p.assets, p.locked);
+        el.innerHTML = renderSesionAssets(p.assets, p.locked, p.id);
         lucide.createIcons({ nodes: [el] });
         if (window.Prism) Prism.highlightAllUnder(el);
     });
