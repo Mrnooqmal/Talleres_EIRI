@@ -169,6 +169,26 @@ if (!db.prepare('SELECT 1 FROM admin_users').get()) {
 try { db.exec("ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT ''") } catch {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN is_super INTEGER DEFAULT 0") } catch {}
 
+// Migración: poblar tutor_ips desde logins históricos y resolver entradas anon existentes
+try {
+  // Por cada IP, tomar el usuario del login más reciente desde esa IP
+  db.exec(`
+    INSERT OR REPLACE INTO tutor_ips (ip, username)
+    SELECT ip, user FROM activity_logs
+    WHERE event = 'admin_login' AND ip != '' AND user != 'anon'
+    GROUP BY ip
+    HAVING created_at = MAX(created_at)
+  `)
+  // Reescribir las entradas anon cuya IP ya conocemos
+  db.exec(`
+    UPDATE activity_logs
+    SET user = (SELECT username FROM tutor_ips WHERE tutor_ips.ip = activity_logs.ip)
+    WHERE user = 'anon'
+      AND ip  != ''
+      AND EXISTS (SELECT 1 FROM tutor_ips WHERE tutor_ips.ip = activity_logs.ip)
+  `)
+} catch (e) { console.error('IP migration:', e.message) }
+
 // Garantiza que exista al menos un administrador principal (super)
 if (!db.prepare('SELECT 1 FROM admin_users WHERE is_super=1').get()) {
   const first = db.prepare("SELECT id FROM admin_users WHERE username='admin'").get()

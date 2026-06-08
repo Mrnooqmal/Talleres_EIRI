@@ -1282,48 +1282,33 @@ function initDragDrop(container, endpoint) {
   container.addEventListener('drop', e => { e.preventDefault(); });
 }
 
-// ─── Vista previa de sesión ───────────────────────────
-function previewSession(e, sid) {
-  e.stopPropagation();
+// ─── Preview overlay (sitio o sesión) ────────────────
+function openPreview(url) {
   const overlay = document.getElementById('previewOverlay');
   const frame   = document.getElementById('previewFrame');
   const tabLink = document.getElementById('previewOpenTab');
-  const url     = `/sesiones/${sid}`;
-  frame.src = url;
+  if (!overlay) return;
+  frame.src    = url;
   tabLink.href = url;
   overlay.classList.add('open');
 }
+
+function previewSession(e, sid) {
+  e.stopPropagation();
+  openPreview(`/sesiones/${sid}`);
+}
+
 document.getElementById('previewClose')?.addEventListener('click', () => {
   const overlay = document.getElementById('previewOverlay');
   const frame   = document.getElementById('previewFrame');
-  overlay.classList.remove('open');
-  frame.src = '';
+  overlay?.classList.remove('open');
+  if (frame) frame.src = '';
 });
-
-// ─── Live hero preview ────────────────────────────────
-function initHeroPreview() {
-  const watch = {
-    'cfg-site_title':      'chp-title',
-    'cfg-subtitle':        'chp-subtitle',
-    'cfg-hero_description':'chp-desc',
-    'cfg-stat_sessions':   'chp-stat-s',
-    'cfg-stat_participants':'chp-stat-p',
-    'cfg-stat_robots':     'chp-stat-r',
-  };
-  for (const [inputId, previewId] of Object.entries(watch)) {
-    const input = document.getElementById(inputId);
-    const out   = document.getElementById(previewId);
-    if (!input || !out) continue;
-    const update = () => { out.textContent = input.value || out.dataset.placeholder || '–'; };
-    input.addEventListener('input', update);
-  }
-}
 
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
   loadSessions();
-  initHeroPreview();
   try {
     const me = await api('GET', '/api/admin/me');
     if (!me.is_super) {

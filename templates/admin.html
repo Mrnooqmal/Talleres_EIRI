@@ -99,56 +99,44 @@
 
             <div class="config-sections">
 
-                <!-- General + Hero preview -->
+                <!-- Contenido general -->
                 <div class="config-card">
                     <div class="config-card-head">
                         <i data-lucide="layout"></i>
                         <h3>Contenido general</h3>
                     </div>
-                    <div class="config-two-col">
-                        <div>
-                            <div class="field-group">
-                                <label>Título del sitio</label>
-                                <input type="text" id="cfg-site_title" placeholder="EIRI Talleres de Robótica">
-                            </div>
-                            <div class="field-group">
-                                <label>Subtítulo / Evento</label>
-                                <input type="text" id="cfg-subtitle" placeholder="Battlebots 2026">
-                            </div>
-                            <div class="field-group">
-                                <label>Descripción en hero</label>
-                                <textarea id="cfg-hero_description" rows="3" placeholder="Construye, programa y combate..."></textarea>
-                            </div>
-                            <div class="field-group">
-                                <label>Texto "Quiénes somos"</label>
-                                <textarea id="cfg-about_description" rows="3"></textarea>
-                            </div>
-                            <div class="cfg-row-2">
-                                <div class="field-group">
-                                    <label>Año</label>
-                                    <input type="text" id="cfg-year" placeholder="2026">
-                                </div>
-                                <div class="field-group">
-                                    <label>Contacto</label>
-                                    <input type="text" id="cfg-contact" placeholder="eiri@udd.cl">
-                                </div>
-                            </div>
+                    <div class="field-group">
+                        <label>Título del sitio</label>
+                        <input type="text" id="cfg-site_title" placeholder="EIRI Talleres de Robótica">
+                    </div>
+                    <div class="field-group">
+                        <label>Subtítulo / Evento</label>
+                        <input type="text" id="cfg-subtitle" placeholder="Battlebots 2026">
+                    </div>
+                    <div class="field-group">
+                        <label>Descripción en hero</label>
+                        <textarea id="cfg-hero_description" rows="3" placeholder="Construye, programa y combate..."></textarea>
+                    </div>
+                    <div class="field-group">
+                        <label>Texto "Quiénes somos"</label>
+                        <textarea id="cfg-about_description" rows="3"></textarea>
+                    </div>
+                    <div class="cfg-row-2">
+                        <div class="field-group">
+                            <label>Año</label>
+                            <input type="text" id="cfg-year" placeholder="2026">
                         </div>
-                        <div class="cfg-hero-preview" id="cfgHeroPreview">
-                            <div class="chp-label">Vista previa hero</div>
-                            <div class="chp-title" id="chp-title">EIRI</div>
-                            <div class="chp-subtitle" id="chp-subtitle">Battlebots 2026</div>
-                            <div class="chp-desc" id="chp-desc">...</div>
-                            <div class="chp-stats">
-                                <div class="chp-stat"><span id="chp-stat-s">–</span><small>Sesiones</small></div>
-                                <div class="chp-stat"><span id="chp-stat-p">–</span><small>Participantes</small></div>
-                                <div class="chp-stat"><span id="chp-stat-r">–</span><small>Robots</small></div>
-                            </div>
+                        <div class="field-group">
+                            <label>Contacto</label>
+                            <input type="text" id="cfg-contact" placeholder="eiri@udd.cl">
                         </div>
                     </div>
                     <div class="config-card-foot">
                         <button class="btn-primary" id="saveCfgBtn">
                             <i data-lucide="save"></i> Guardar contenido
+                        </button>
+                        <button class="btn-ghost" onclick="openPreview('/')">
+                            <i data-lucide="eye"></i> Ver sitio
                         </button>
                         <p class="cfg-feedback" id="cfgFeedback"></p>
                     </div>
