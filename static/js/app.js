@@ -336,7 +336,7 @@ function buildSession(session) {
     <div class="acc-session" data-sid="${session.id}" data-status="${session.status || ''}">
       <div class="acc-session-head">
         <span class="acc-session-num">SESIÓN ${String(session.number).padStart(2,'0')}</span>
-        <span class="acc-session-title">${session.title}</span>
+        <a href="/sesiones/${session.id}" class="acc-session-title" title="Ver sesión completa">${session.title}</a>
         <span class="acc-session-date">${dateText}</span>
         ${badgeHTML}
         <span class="acc-chevron"><i data-lucide="chevron-down"></i></span>
@@ -367,7 +367,9 @@ async function loadSessions() {
     lucide.createIcons();
 
     container.querySelectorAll('.acc-session-head').forEach(head => {
-      head.addEventListener('click', () => {
+      head.addEventListener('click', e => {
+        // Clic en el título-enlace navega a la sesión; no togglea el acordeón.
+        if (e.target.closest('.acc-session-title')) return;
         head.closest('.acc-session').classList.toggle('open');
       });
     });

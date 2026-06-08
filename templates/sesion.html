@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión {{ session.number | string | pad(2, '0') }} — {{ session.title }} · EIRI</title>
+    <meta name="description" content="{{ session.description or session.title }}, EIRI Universidad del Desarrollo">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/sesion.css">
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" defer></script>
+</head>
+<body class="sesion-page">
+
+<!-- ── Topbar ── -->
+<header class="ses-topbar">
+    <div class="ses-topbar-inner">
+        <a href="/" class="ses-brand">
+            <span class="ses-brand-eiri">EIRI</span>
+            <span class="ses-brand-sub">Talleres de Robótica</span>
+        </a>
+
+        <nav class="ses-breadcrumb" aria-label="Ubicación">
+            <a href="/" class="ses-bc-link"><i data-lucide="home"></i><span>Inicio</span></a>
+            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+            <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
+            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+            <span class="ses-bc-current">Sesión {{ '%02d' | format(session.number) }}</span>
+        </nav>
+
+        <button class="ses-index-toggle" id="indexToggle" aria-label="Mostrar índice">
+            <i data-lucide="layout-list"></i>
+            <span>Índice</span>
+        </button>
+    </div>
+</header>
+
+<div class="ses-layout">
+
+    <!-- ── Sidebar índice ── -->
+    <aside class="ses-sidebar" id="sesSidebar">
+        <div class="ses-sidebar-inner">
+            <div class="ses-sidebar-head">
+                <span class="ses-sidebar-label">SESIÓN {{ '%02d' | format(session.number) }}</span>
+                <span class="ses-sidebar-title">{{ session.title }}</span>
+                {% if session.date_text and session.date_text != 'Por definir' %}
+                <span class="ses-sidebar-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
+                {% endif %}
+            </div>
+
+            <nav class="ses-index" id="sesIndex">
+                {% for p in session.projects %}
+                <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
+                    <span class="ses-index-num">{{ loop.index | string | pad(2, '0') }}</span>
+                    <span class="ses-index-name">{{ p.title }}</span>
+                    <span class="ses-index-count">{{ p.assets | length + p.locked | length }}</span>
+                </a>
+                {% endfor %}
+                {% if not session.projects %}
+                <p class="ses-index-empty">Sin proyectos aún.</p>
+                {% endif %}
+            </nav>
+        </div>
+    </aside>
+
+    <div class="ses-sidebar-backdrop" id="sesSidebarBackdrop"></div>
+
+    <!-- ── Contenido principal ── -->
+    <main class="ses-main" id="sesMain">
+
+        <!-- Cabecera de la sesión -->
+        <div class="ses-hero">
+            <div class="ses-hero-meta">
+                <span class="ses-hero-num">SESIÓN {{ '%02d' | format(session.number) }}</span>
+                {% if session.status == 'active' %}
+                <span class="ses-badge badge-active"><i data-lucide="zap"></i> En curso</span>
+                {% elif session.status == 'completed' %}
+                <span class="ses-badge badge-completed"><i data-lucide="check-circle"></i> Completada</span>
+                {% else %}
+                <span class="ses-badge badge-upcoming"><i data-lucide="circle"></i> Próxima</span>
+                {% endif %}
+                {% if session.date_text and session.date_text != 'Por definir' %}
+                <span class="ses-hero-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
+                {% endif %}
+            </div>
+            <h1 class="ses-hero-title">{{ session.title }}</h1>
+            {% if session.description %}
+            <p class="ses-hero-desc">{{ session.description }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Proyectos -->
+        {% if session.projects %}
+        <div class="ses-projects">
+            {% for p in session.projects %}
+            <section class="ses-project" id="project-{{ p.id }}">
+                <div class="ses-project-head">
+                    <div class="ses-project-num">{{ loop.index | string | pad(2, '0') }}</div>
+                    <div class="ses-project-info">
+                        <h2 class="ses-project-title">{{ p.title }}</h2>
+                        {% if p.description %}<p class="ses-project-desc">{{ p.description }}</p>{% endif %}
+                        {% if p.tags %}
+                        <div class="ses-project-tags">
+                            {% for tag in p.tags.split(',') %}
+                            {% if tag.strip() %}<span class="ses-tag">#{{ tag.strip() }}</span>{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if p.assets or p.locked %}
+                <div class="ses-assets" id="ses-assets-{{ p.id }}">
+                    <!-- assets se renderizan por JS desde los datos embebidos -->
+                </div>
+                <script>
+                (function(){
+                    const assets = {{ p.assets | dump | safe }};
+                    const locked = {{ p.locked | dump | safe }};
+                    const container = document.getElementById('ses-assets-{{ p.id }}');
+                    if (container) {
+                        container.innerHTML = renderSesionAssets(assets, locked);
+                        lucide.createIcons({ nodes: [container] });
+                        if (window.Prism) Prism.highlightAllUnder(container);
+                    }
+                })();
+                </script>
+                {% else %}
+                <p class="ses-no-assets">Sin recursos publicados aún.</p>
+                {% endif %}
+            </section>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="ses-empty">
+            <i data-lucide="inbox"></i>
+            <p>Esta sesión aún no tiene proyectos publicados.</p>
+        </div>
+        {% endif %}
+
+        <!-- Navegación inferior -->
+        <div class="ses-footer-nav">
+            <a href="/#sesiones" class="btn btn-ghost-outline ses-back-btn">
+                <i data-lucide="arrow-left"></i>
+                Volver a sesiones
+            </a>
+        </div>
+    </main>
+
+</div>
+
+<!-- Lightbox (reutilizado) -->
+<script src="/static/js/sesion.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    if (window.Prism) Prism.highlightAll();
+    initSesion();
+});
+</script>
+
+</body>
+</html>
