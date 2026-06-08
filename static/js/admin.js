@@ -733,7 +733,7 @@ async function loadLogs() {
         <td>${fmtFechaCL(l.created_at)}</td>
         <td>${escHtml(l.event)}</td>
         <td>${escHtml(l.detail)}</td>
-        <td>${escHtml(l.user)}</td>
+        <td>${l.user === 'anon' ? '<span class="log-anon">Visitante</span>' : escHtml(l.user)}</td>
         <td>${escHtml(l.ip)}</td>
       </tr>`).join('');
   } catch (e) {
@@ -1303,7 +1303,34 @@ document.getElementById('previewClose')?.addEventListener('click', () => {
   const frame   = document.getElementById('previewFrame');
   overlay?.classList.remove('open');
   if (frame) frame.src = '';
+  // reset drag position so it re-centers on next open
+  if (overlay) { overlay.style.left = ''; overlay.style.top = ''; overlay.style.transform = ''; }
 });
+
+// Draggable preview panel
+;(function () {
+  const panel = document.getElementById('previewOverlay');
+  const bar   = panel?.querySelector('.preview-bar');
+  if (!panel || !bar) return;
+  let dragging = false, ox = 0, oy = 0;
+  bar.addEventListener('mousedown', e => {
+    if (e.target.closest('button, a')) return;
+    const r = panel.getBoundingClientRect();
+    panel.style.transform = 'none';
+    panel.style.left = r.left + 'px';
+    panel.style.top  = r.top  + 'px';
+    ox = e.clientX - r.left;
+    oy = e.clientY - r.top;
+    dragging = true;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    panel.style.left = (e.clientX - ox) + 'px';
+    panel.style.top  = (e.clientY - oy) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+})();
 
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
