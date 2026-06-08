@@ -233,10 +233,13 @@ app.get('/sesiones/:id', (req, res) => {
   if (!session) return res.status(404).send('Sesión no encontrada')
   const projects = db.prepare('SELECT * FROM projects WHERE session_id=? ORDER BY display_order').all(session.id)
   for (const p of projects) {
-    p.assets = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=0 ORDER BY display_order').all(p.id)
-    p.locked = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=1 ORDER BY display_order').all(p.id)
+    p.assets     = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=0 ORDER BY display_order').all(p.id)
+    p.locked     = db.prepare('SELECT * FROM assets WHERE project_id=? AND is_locked=1 ORDER BY display_order').all(p.id)
+    p.tags_list  = p.tags ? p.tags.split(',').map(t => t.trim()).filter(Boolean) : []
+    p.asset_count = p.assets.length + p.locked.length
   }
-  session.projects = projects
+  session.projects    = projects
+  session.num_padded  = String(session.number).padStart(2, '0')
   log(req, 'view_session', session.id)
   res.render('sesion.html', { config: getConfig(), session })
 })

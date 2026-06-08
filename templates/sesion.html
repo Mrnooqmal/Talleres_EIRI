@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sesión {{ session.number | string | pad(2, '0') }} — {{ session.title }} · EIRI</title>
+    <title>Sesión {{ session.num_padded }} — {{ session.title }} · EIRI</title>
     <meta name="description" content="{{ session.description or session.title }}, EIRI Universidad del Desarrollo">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,16 +12,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/sesion.css">
-
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js" defer></script>
 </head>
 <body class="sesion-page">
+
+<!-- Datos de la sesión para el JS -->
+<script>
+window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
+</script>
 
 <!-- ── Topbar ── -->
 <header class="ses-topbar">
@@ -36,7 +33,7 @@
             <i data-lucide="chevron-right" class="ses-bc-sep"></i>
             <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
             <i data-lucide="chevron-right" class="ses-bc-sep"></i>
-            <span class="ses-bc-current">Sesión {{ '%02d' | format(session.number) }}</span>
+            <span class="ses-bc-current">Sesión {{ session.num_padded }}</span>
         </nav>
 
         <button class="ses-index-toggle" id="indexToggle" aria-label="Mostrar índice">
@@ -52,7 +49,7 @@
     <aside class="ses-sidebar" id="sesSidebar">
         <div class="ses-sidebar-inner">
             <div class="ses-sidebar-head">
-                <span class="ses-sidebar-label">SESIÓN {{ '%02d' | format(session.number) }}</span>
+                <span class="ses-sidebar-label">SESIÓN {{ session.num_padded }}</span>
                 <span class="ses-sidebar-title">{{ session.title }}</span>
                 {% if session.date_text and session.date_text != 'Por definir' %}
                 <span class="ses-sidebar-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
@@ -62,14 +59,13 @@
             <nav class="ses-index" id="sesIndex">
                 {% for p in session.projects %}
                 <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
-                    <span class="ses-index-num">{{ loop.index | string | pad(2, '0') }}</span>
+                    <span class="ses-index-num">{{ loop.index }}</span>
                     <span class="ses-index-name">{{ p.title }}</span>
-                    <span class="ses-index-count">{{ p.assets | length + p.locked | length }}</span>
+                    <span class="ses-index-count">{{ p.asset_count }}</span>
                 </a>
-                {% endfor %}
-                {% if not session.projects %}
+                {% else %}
                 <p class="ses-index-empty">Sin proyectos aún.</p>
-                {% endif %}
+                {% endfor %}
             </nav>
         </div>
     </aside>
@@ -82,7 +78,7 @@
         <!-- Cabecera de la sesión -->
         <div class="ses-hero">
             <div class="ses-hero-meta">
-                <span class="ses-hero-num">SESIÓN {{ '%02d' | format(session.number) }}</span>
+                <span class="ses-hero-num">SESIÓN {{ session.num_padded }}</span>
                 {% if session.status == 'active' %}
                 <span class="ses-badge badge-active"><i data-lucide="zap"></i> En curso</span>
                 {% elif session.status == 'completed' %}
@@ -100,45 +96,26 @@
             {% endif %}
         </div>
 
-        <!-- Proyectos -->
+        <!-- Proyectos (estructura estática server-side, assets inyectados por JS) -->
         {% if session.projects %}
         <div class="ses-projects">
             {% for p in session.projects %}
             <section class="ses-project" id="project-{{ p.id }}">
                 <div class="ses-project-head">
-                    <div class="ses-project-num">{{ loop.index | string | pad(2, '0') }}</div>
+                    <div class="ses-project-num">{{ loop.index }}</div>
                     <div class="ses-project-info">
                         <h2 class="ses-project-title">{{ p.title }}</h2>
                         {% if p.description %}<p class="ses-project-desc">{{ p.description }}</p>{% endif %}
-                        {% if p.tags %}
+                        {% if p.tags_list %}
                         <div class="ses-project-tags">
-                            {% for tag in p.tags.split(',') %}
-                            {% if tag.strip() %}<span class="ses-tag">#{{ tag.strip() }}</span>{% endif %}
+                            {% for tag in p.tags_list %}
+                            <span class="ses-tag">#{{ tag }}</span>
                             {% endfor %}
                         </div>
                         {% endif %}
                     </div>
                 </div>
-
-                {% if p.assets or p.locked %}
-                <div class="ses-assets" id="ses-assets-{{ p.id }}">
-                    <!-- assets se renderizan por JS desde los datos embebidos -->
-                </div>
-                <script>
-                (function(){
-                    const assets = {{ p.assets | dump | safe }};
-                    const locked = {{ p.locked | dump | safe }};
-                    const container = document.getElementById('ses-assets-{{ p.id }}');
-                    if (container) {
-                        container.innerHTML = renderSesionAssets(assets, locked);
-                        lucide.createIcons({ nodes: [container] });
-                        if (window.Prism) Prism.highlightAllUnder(container);
-                    }
-                })();
-                </script>
-                {% else %}
-                <p class="ses-no-assets">Sin recursos publicados aún.</p>
-                {% endif %}
+                <div class="ses-assets" id="ses-assets-{{ p.id }}"></div>
             </section>
             {% endfor %}
         </div>
@@ -160,12 +137,31 @@
 
 </div>
 
-<!-- Lightbox (reutilizado) -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 <script src="/static/js/sesion.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
-    if (window.Prism) Prism.highlightAll();
+
+    // Inyectar assets en cada proyecto desde los datos embebidos
+    (window.SESSION_PROJECTS || []).forEach(p => {
+        const el = document.getElementById('ses-assets-' + p.id);
+        if (!el) return;
+        if (!p.assets.length && !p.locked.length) {
+            el.innerHTML = '<p class="ses-no-assets">Sin recursos publicados aún.</p>';
+            return;
+        }
+        el.innerHTML = renderSesionAssets(p.assets, p.locked);
+        lucide.createIcons({ nodes: [el] });
+        if (window.Prism) Prism.highlightAllUnder(el);
+    });
+
     initSesion();
 });
 </script>
