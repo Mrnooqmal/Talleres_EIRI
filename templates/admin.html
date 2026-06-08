@@ -98,60 +98,128 @@
             </div>
 
             <div class="config-sections">
+
+                <!-- General + Hero preview -->
                 <div class="config-card">
-                    <h3>Contenido del sitio</h3>
-                    <div class="field-group">
-                        <label>Título del sitio</label>
-                        <input type="text" id="cfg-site_title">
+                    <div class="config-card-head">
+                        <i data-lucide="layout"></i>
+                        <h3>Contenido general</h3>
                     </div>
-                    <div class="field-group">
-                        <label>Subtítulo / Evento</label>
-                        <input type="text" id="cfg-subtitle">
+                    <div class="config-two-col">
+                        <div>
+                            <div class="field-group">
+                                <label>Título del sitio</label>
+                                <input type="text" id="cfg-site_title" placeholder="EIRI Talleres de Robótica">
+                            </div>
+                            <div class="field-group">
+                                <label>Subtítulo / Evento</label>
+                                <input type="text" id="cfg-subtitle" placeholder="Battlebots 2026">
+                            </div>
+                            <div class="field-group">
+                                <label>Descripción en hero</label>
+                                <textarea id="cfg-hero_description" rows="3" placeholder="Construye, programa y combate..."></textarea>
+                            </div>
+                            <div class="field-group">
+                                <label>Texto "Quiénes somos"</label>
+                                <textarea id="cfg-about_description" rows="3"></textarea>
+                            </div>
+                            <div class="cfg-row-2">
+                                <div class="field-group">
+                                    <label>Año</label>
+                                    <input type="text" id="cfg-year" placeholder="2026">
+                                </div>
+                                <div class="field-group">
+                                    <label>Contacto</label>
+                                    <input type="text" id="cfg-contact" placeholder="eiri@udd.cl">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="cfg-hero-preview" id="cfgHeroPreview">
+                            <div class="chp-label">Vista previa hero</div>
+                            <div class="chp-title" id="chp-title">EIRI</div>
+                            <div class="chp-subtitle" id="chp-subtitle">Battlebots 2026</div>
+                            <div class="chp-desc" id="chp-desc">...</div>
+                            <div class="chp-stats">
+                                <div class="chp-stat"><span id="chp-stat-s">–</span><small>Sesiones</small></div>
+                                <div class="chp-stat"><span id="chp-stat-p">–</span><small>Participantes</small></div>
+                                <div class="chp-stat"><span id="chp-stat-r">–</span><small>Robots</small></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="field-group">
-                        <label>Descripción en hero</label>
-                        <textarea id="cfg-hero_description" rows="3"></textarea>
+                    <div class="config-card-foot">
+                        <button class="btn-primary" id="saveCfgBtn">
+                            <i data-lucide="save"></i> Guardar contenido
+                        </button>
+                        <p class="cfg-feedback" id="cfgFeedback"></p>
                     </div>
-                    <div class="field-group">
-                        <label>Texto sección "Quiénes somos"</label>
-                        <textarea id="cfg-about_description" rows="3"></textarea>
-                    </div>
-                    <div class="field-group">
-                        <label>Año</label>
-                        <input type="text" id="cfg-year" style="max-width:120px">
-                    </div>
-                    <div class="field-group">
-                        <label>Contacto (email u otro)</label>
-                        <input type="text" id="cfg-contact" placeholder="eiri@udd.cl">
-                    </div>
-                    <button class="btn-primary" id="saveCfgBtn">
-                        <i data-lucide="save"></i> Guardar cambios
-                    </button>
-                    <p class="cfg-feedback" id="cfgFeedback"></p>
                 </div>
 
+                <!-- Estadísticas -->
                 <div class="config-card">
-                    <h3>Redes sociales</h3>
-                    <div class="field-group">
-                        <label>Instagram (URL)</label>
-                        <input type="text" id="cfg-social_instagram" placeholder="https://instagram.com/eiri_udd">
+                    <div class="config-card-head">
+                        <i data-lucide="bar-chart-2"></i>
+                        <h3>Estadísticas del hero</h3>
                     </div>
-                    <div class="field-group">
-                        <label>GitHub (URL)</label>
-                        <input type="text" id="cfg-social_github" placeholder="https://github.com/eiri-udd">
+                    <div class="cfg-row-3">
+                        <div class="field-group">
+                            <label>Sesiones</label>
+                            <input type="number" id="cfg-stat_sessions" min="0" placeholder="6">
+                        </div>
+                        <div class="field-group">
+                            <label>Participantes</label>
+                            <input type="number" id="cfg-stat_participants" min="0" placeholder="30">
+                        </div>
+                        <div class="field-group">
+                            <label>Robots</label>
+                            <input type="number" id="cfg-stat_robots" min="0" placeholder="4">
+                        </div>
                     </div>
-                    <div class="field-group">
-                        <label>Discord (URL invite)</label>
-                        <input type="text" id="cfg-social_discord" placeholder="https://discord.gg/...">
-                    </div>
-                    <div class="field-group">
-                        <label>Email</label>
-                        <input type="text" id="cfg-social_email" placeholder="eiri@udd.cl">
+                    <div class="config-card-foot">
+                        <button class="btn-primary" id="saveStatsBtn">
+                            <i data-lucide="save"></i> Guardar estadísticas
+                        </button>
+                        <p class="cfg-feedback" id="statsFeedback"></p>
                     </div>
                 </div>
 
+                <!-- Redes sociales -->
                 <div class="config-card">
-                    <h3>Cambiar contraseña</h3>
+                    <div class="config-card-head">
+                        <i data-lucide="share-2"></i>
+                        <h3>Redes sociales</h3>
+                    </div>
+                    <div class="cfg-row-2">
+                        <div class="field-group">
+                            <label>Instagram</label>
+                            <input type="url" id="cfg-social_instagram" placeholder="https://instagram.com/eiri_udd">
+                        </div>
+                        <div class="field-group">
+                            <label>GitHub</label>
+                            <input type="url" id="cfg-social_github" placeholder="https://github.com/eiri-udd">
+                        </div>
+                        <div class="field-group">
+                            <label>Discord</label>
+                            <input type="url" id="cfg-social_discord" placeholder="https://discord.gg/...">
+                        </div>
+                        <div class="field-group">
+                            <label>Email</label>
+                            <input type="email" id="cfg-social_email" placeholder="eiri@udd.cl">
+                        </div>
+                    </div>
+                    <div class="config-card-foot">
+                        <button class="btn-primary" id="saveSocialBtn">
+                            <i data-lucide="save"></i> Guardar redes
+                        </button>
+                        <p class="cfg-feedback" id="socialFeedback"></p>
+                    </div>
+                </div>
+
+                <!-- Contraseña -->
+                <div class="config-card">
+                    <div class="config-card-head">
+                        <i data-lucide="lock"></i>
+                        <h3>Cambiar contraseña</h3>
+                    </div>
                     <div class="field-group">
                         <label>Contraseña actual</label>
                         <input type="password" id="pw-current">
@@ -164,10 +232,12 @@
                         <label>Confirmar</label>
                         <input type="password" id="pw-confirm">
                     </div>
-                    <button class="btn-primary" id="savePwBtn">
-                        <i data-lucide="lock"></i> Actualizar contraseña
-                    </button>
-                    <p class="cfg-feedback" id="pwFeedback"></p>
+                    <div class="config-card-foot">
+                        <button class="btn-primary" id="savePwBtn">
+                            <i data-lucide="lock"></i> Actualizar contraseña
+                        </button>
+                        <p class="cfg-feedback" id="pwFeedback"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,6 +340,20 @@
         </div>
 
     </main>
+</div>
+
+<!-- ── Preview de sesión (iframe) ── -->
+<div class="preview-overlay" id="previewOverlay">
+    <div class="preview-bar">
+        <span class="preview-bar-title">Vista previa — Sesión</span>
+        <div class="preview-bar-actions">
+            <a class="btn-ghost preview-open-tab" id="previewOpenTab" href="#" target="_blank" rel="noopener">
+                <i data-lucide="external-link"></i> Abrir en pestaña
+            </a>
+            <button class="btn-icon" id="previewClose" aria-label="Cerrar"><i data-lucide="x"></i></button>
+        </div>
+    </div>
+    <iframe class="preview-frame" id="previewFrame" src="" title="Vista previa sesión"></iframe>
 </div>
 
 <!-- ── Modal ── -->

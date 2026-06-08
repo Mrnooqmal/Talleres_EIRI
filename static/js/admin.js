@@ -118,10 +118,32 @@ async function loadSessions() {
   }
 }
 
-function statusBadge(status) {
-  const map = { upcoming: 'status-upcoming', active: 'status-active', completed: 'status-completed' };
-  const labels = { upcoming: 'Próximo', active: 'En curso', completed: 'Completado' };
-  return `<span class="si-status ${map[status] || 'status-upcoming'}">${labels[status] || status}</span>`;
+const STATUS_CYCLE = { upcoming: 'active', active: 'completed', completed: 'upcoming' };
+const STATUS_CLASS = { upcoming: 'status-upcoming', active: 'status-active', completed: 'status-completed' };
+const STATUS_LABEL = { upcoming: 'Próximo', active: 'En curso', completed: 'Completado' };
+
+function statusBadge(status, sid) {
+  const cls = STATUS_CLASS[status] || 'status-upcoming';
+  const lbl = STATUS_LABEL[status] || status;
+  return `<button class="si-status-btn ${cls}" title="Clic para cambiar estado"
+    onclick="cycleStatus(event,${sid},'${status}')">${lbl}</button>`;
+}
+
+async function cycleStatus(e, sid, current) {
+  e.stopPropagation();
+  const next = STATUS_CYCLE[current] || 'upcoming';
+  const btn  = e.currentTarget;
+  btn.textContent = '…';
+  btn.disabled = true;
+  try {
+    await api('PATCH', `/api/admin/sessions/${sid}/status`, { status: next });
+    btn.className = `si-status-btn ${STATUS_CLASS[next]}`;
+    btn.textContent = STATUS_LABEL[next];
+    btn.onclick = (ev) => cycleStatus(ev, sid, next);
+  } catch {
+    btn.textContent = STATUS_LABEL[current];
+  }
+  btn.disabled = false;
 }
 
 function renderSessions(sessions) {
@@ -131,13 +153,15 @@ function renderSessions(sessions) {
     return;
   }
   list.innerHTML = sessions.map(s => `
-    <div class="session-item" data-sid="${s.id}">
+    <div class="session-item" data-sid="${s.id}" data-drag-id="${s.id}" draggable="true">
       <div class="session-item-head">
+        <span class="drag-handle" title="Arrastar para reordenar"><i data-lucide="grip-vertical"></i></span>
         <span class="si-num">SESIÓN ${String(s.number).padStart(2,'0')}</span>
         <span class="si-title">${s.title}</span>
         <span class="si-date">${s.date_text}</span>
-        ${statusBadge(s.status)}
+        ${statusBadge(s.status, s.id)}
         <div class="si-actions">
+          <button class="btn-icon" title="Vista previa" onclick="previewSession(event,${s.id})"><i data-lucide="eye"></i></button>
           <button class="btn-icon" title="Editar sesión" onclick="editSession(${s.id})"><i data-lucide="edit-2"></i></button>
           <button class="btn-icon btn-del" title="Eliminar" onclick="deleteSession(${s.id},'${escHtml(s.title)}')"><i data-lucide="trash-2"></i></button>
         </div>
@@ -161,7 +185,7 @@ function renderSessions(sessions) {
   // Accordion toggle + lazy load projects
   list.querySelectorAll('.session-item-head').forEach(head => {
     head.addEventListener('click', e => {
-      if (e.target.closest('.si-actions')) return;
+      if (e.target.closest('.si-actions') || e.target.closest('.drag-handle') || e.target.closest('.si-status-btn')) return;
       const item = head.closest('.session-item');
       const wasOpen = item.classList.contains('open');
       item.classList.toggle('open');
@@ -171,6 +195,8 @@ function renderSessions(sessions) {
       }
     });
   });
+
+  initDragDrop(list, '/api/admin/sessions/reorder');
 }
 
 // Session CRUD
@@ -261,8 +287,9 @@ function renderProjects(projects, sessionId, container) {
     return;
   }
   container.innerHTML = projects.map(p => `
-    <div class="project-item" data-pid="${p.id}">
+    <div class="project-item" data-pid="${p.id}" data-drag-id="${p.id}" draggable="true">
       <div class="project-item-head">
+        <span class="drag-handle" title="Arrastar para reordenar"><i data-lucide="grip-vertical"></i></span>
         <span class="pi-title">${escHtml(p.title)}</span>
         ${p.description ? `<span class="pi-desc">${escHtml(p.description)}</span>` : ''}
         <div class="si-actions">
@@ -288,13 +315,15 @@ function renderProjects(projects, sessionId, container) {
 
   container.querySelectorAll('.project-item-head').forEach(head => {
     head.addEventListener('click', e => {
-      if (e.target.closest('.si-actions')) return;
+      if (e.target.closest('.si-actions') || e.target.closest('.drag-handle')) return;
       const item   = head.closest('.project-item');
       const wasOpen = item.classList.contains('open');
       item.classList.toggle('open');
       if (!wasOpen) loadAssets(item.dataset.pid);
     });
   });
+
+  initDragDrop(container, '/api/admin/projects/reorder');
 }
 
 // Project CRUD
@@ -616,6 +645,7 @@ function deleteAsset(aid, label, projectId) {
 const CFG_KEYS = [
   'site_title','subtitle','hero_description','year','contact',
   'about_description','social_instagram','social_discord','social_github','social_email',
+  'stat_sessions','stat_participants','stat_robots',
 ]
 
 async function loadConfig() {
@@ -628,23 +658,35 @@ async function loadConfig() {
   } catch {}
 }
 
-document.getElementById('saveCfgBtn')?.addEventListener('click', async () => {
-  const fb = document.getElementById('cfgFeedback');
+// ─── Save config helpers ───────────────────────────────
+async function saveCfgFields(keys, fbId) {
+  const fb = document.getElementById(fbId);
+  if (!fb) return;
+  const data = {};
+  keys.forEach(k => {
+    const el = document.getElementById(`cfg-${k}`);
+    if (el) data[k] = el.value;
+  });
   try {
-    const data = {};
-    CFG_KEYS.forEach(k => {
-      const el = document.getElementById(`cfg-${k}`);
-      if (el) data[k] = el.value;
-    });
     await api('PUT', '/api/admin/config', data);
-    fb.textContent = 'Guardado correctamente';
+    fb.textContent = 'Guardado ✓';
     fb.className   = 'cfg-feedback ok';
     setTimeout(() => fb.textContent = '', 2500);
   } catch (e) {
     fb.textContent = e.message;
     fb.className   = 'cfg-feedback err';
   }
-});
+}
+
+document.getElementById('saveCfgBtn')?.addEventListener('click', () =>
+  saveCfgFields(['site_title','subtitle','hero_description','about_description','year','contact'], 'cfgFeedback')
+);
+document.getElementById('saveStatsBtn')?.addEventListener('click', () =>
+  saveCfgFields(['stat_sessions','stat_participants','stat_robots'], 'statsFeedback')
+);
+document.getElementById('saveSocialBtn')?.addEventListener('click', () =>
+  saveCfgFields(['social_instagram','social_discord','social_github','social_email'], 'socialFeedback')
+);
 
 document.getElementById('savePwBtn')?.addEventListener('click', async () => {
   const fb   = document.getElementById('pwFeedback');
@@ -1198,10 +1240,90 @@ Object.assign(window, {
   editTeam, deleteTeam, deleteFeedback,
 });
 
+// ─── Drag & drop reordering ───────────────────────────
+function initDragDrop(container, endpoint) {
+  if (!container) return;
+  let dragging = null;
+
+  container.addEventListener('dragstart', e => {
+    const item = e.target.closest('[data-drag-id]');
+    if (!item) return;
+    dragging = item;
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => item.classList.add('dragging'), 0);
+  });
+
+  container.addEventListener('dragend', () => {
+    if (dragging) dragging.classList.remove('dragging');
+    container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    // Persist new order
+    const items = [...container.querySelectorAll(':scope > [data-drag-id]')].map((el, i) => ({
+      id: parseInt(el.dataset.dragId), display_order: i + 1
+    }));
+    api('PATCH', endpoint, items).catch(() => {});
+    dragging = null;
+  });
+
+  container.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (!dragging) return;
+    const target = e.target.closest('[data-drag-id]');
+    if (!target || target === dragging) return;
+    container.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    target.classList.add('drag-over');
+    const rect = target.getBoundingClientRect();
+    if (e.clientY < rect.top + rect.height / 2) {
+      container.insertBefore(dragging, target);
+    } else {
+      container.insertBefore(dragging, target.nextSibling);
+    }
+  });
+
+  container.addEventListener('drop', e => { e.preventDefault(); });
+}
+
+// ─── Vista previa de sesión ───────────────────────────
+function previewSession(e, sid) {
+  e.stopPropagation();
+  const overlay = document.getElementById('previewOverlay');
+  const frame   = document.getElementById('previewFrame');
+  const tabLink = document.getElementById('previewOpenTab');
+  const url     = `/sesiones/${sid}`;
+  frame.src = url;
+  tabLink.href = url;
+  overlay.classList.add('open');
+}
+document.getElementById('previewClose')?.addEventListener('click', () => {
+  const overlay = document.getElementById('previewOverlay');
+  const frame   = document.getElementById('previewFrame');
+  overlay.classList.remove('open');
+  frame.src = '';
+});
+
+// ─── Live hero preview ────────────────────────────────
+function initHeroPreview() {
+  const watch = {
+    'cfg-site_title':      'chp-title',
+    'cfg-subtitle':        'chp-subtitle',
+    'cfg-hero_description':'chp-desc',
+    'cfg-stat_sessions':   'chp-stat-s',
+    'cfg-stat_participants':'chp-stat-p',
+    'cfg-stat_robots':     'chp-stat-r',
+  };
+  for (const [inputId, previewId] of Object.entries(watch)) {
+    const input = document.getElementById(inputId);
+    const out   = document.getElementById(previewId);
+    if (!input || !out) continue;
+    const update = () => { out.textContent = input.value || out.dataset.placeholder || '–'; };
+    input.addEventListener('input', update);
+  }
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', async () => {
   lucide.createIcons();
   loadSessions();
+  initHeroPreview();
   try {
     const me = await api('GET', '/api/admin/me');
     if (!me.is_super) {

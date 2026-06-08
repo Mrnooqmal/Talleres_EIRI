@@ -152,6 +152,11 @@ db.exec(`
     message    TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS tutor_ips (
+    ip         TEXT PRIMARY KEY,
+    username   TEXT NOT NULL,
+    updated_at TEXT DEFAULT (datetime('now'))
+  );
 `)
 
 // ─── Seeds ───────────────────────────────────────────
@@ -208,8 +213,14 @@ function getConfig() {
 }
 
 function log(req, event, detail = '') {
+  let user = req.session.adminUser || 'anon'
+  const ip = req.ip || ''
+  if (user === 'anon' && ip) {
+    const known = db.prepare('SELECT username FROM tutor_ips WHERE ip=?').get(ip)
+    if (known) user = known.username
+  }
   db.prepare('INSERT INTO activity_logs (event, detail, user, ip) VALUES (?,?,?,?)')
-    .run(event, detail, req.session.adminUser || 'anon', req.ip || '')
+    .run(event, detail, user, ip)
 }
 
 function requireAdmin(req, res, next) {
@@ -318,6 +329,11 @@ app.post('/api/admin/login', (req, res) => {
     req.session.adminId    = user.id
     req.session.adminUser  = user.username
     req.session.adminSuper = !!user.is_super
+    const loginIp = req.ip || ''
+    if (loginIp) {
+      db.prepare('INSERT OR REPLACE INTO tutor_ips (ip, username, updated_at) VALUES (?,?,datetime("now"))')
+        .run(loginIp, user.username)
+    }
     log(req, 'admin_login')
     return res.json({ ok: true, username: user.username, is_super: !!user.is_super })
   }
@@ -379,6 +395,20 @@ app.delete('/api/admin/sessions/:id', requireAdmin, (req, res) => {
   res.json({ ok: true })
 })
 
+app.patch('/api/admin/sessions/reorder', requireAdmin, (req, res) => {
+  for (const { id, display_order } of (req.body || [])) {
+    db.prepare('UPDATE workshop_sessions SET display_order=? WHERE id=?').run(display_order, id)
+  }
+  res.json({ ok: true })
+})
+
+app.patch('/api/admin/sessions/:id/status', requireAdmin, (req, res) => {
+  const { status } = req.body
+  db.prepare("UPDATE workshop_sessions SET status=?,updated_at=datetime('now') WHERE id=?").run(status, req.params.id)
+  log(req, 'update_session_status', req.params.id)
+  res.json({ ok: true })
+})
+
 // ─── Projects CRUD ───────────────────────────────────
 
 app.get('/api/admin/projects', requireAdmin, (req, res) => {
@@ -403,6 +433,13 @@ app.put('/api/admin/projects/:id', requireAdmin, (req, res) => {
   db.prepare('UPDATE projects SET title=?,description=?,tags=?,display_order=? WHERE id=?')
     .run(title, description, tags, display_order, req.params.id)
   log(req, 'update_project', req.params.id)
+  res.json({ ok: true })
+})
+
+app.patch('/api/admin/projects/reorder', requireAdmin, (req, res) => {
+  for (const { id, display_order } of (req.body || [])) {
+    db.prepare('UPDATE projects SET display_order=? WHERE id=?').run(display_order, id)
+  }
   res.json({ ok: true })
 })
 
