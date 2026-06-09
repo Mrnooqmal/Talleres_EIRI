@@ -20,19 +20,20 @@ body.sesion-page { overflow-x: hidden; }
 
 /* ─── Breadcrumb ──────────────────────────────────────── */
 .ses-breadcrumb {
-  position: sticky;
+  position: fixed;
   top: var(--nav-h, 56px);
+  left: var(--ses-sidebar-w);
+  right: 0;
   z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
-  margin: 0 -3rem 1.75rem;
-  padding: 0.6rem 3rem;
-  background: rgba(8, 14, 26, 0.92);
+  padding: 0.5rem 3rem;
+  background: rgba(8, 14, 26, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(33, 150, 243, 0.08);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.1);
 }
 .ses-bc-link {
   display: inline-flex;
@@ -223,7 +224,7 @@ body.sesion-page { overflow-x: hidden; }
 /* ─── Main ────────────────────────────────────────────── */
 .ses-main {
   margin-left: var(--ses-sidebar-w);
-  padding: 2.5rem 3rem 4rem;
+  padding: 4rem 3rem 4rem;
   min-width: 0;
 }
 
