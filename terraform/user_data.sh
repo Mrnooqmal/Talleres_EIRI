@@ -36,6 +36,33 @@ server {
 
     client_max_body_size 50m;
 
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_proxied any;
+    gzip_min_length 256;
+    gzip_comp_level 5;
+    gzip_types text/plain text/css application/json application/javascript
+               text/xml application/xml image/svg+xml font/woff2;
+
+    # Serve static files directly from disk (bypass Node.js)
+    location /static/ {
+        alias /opt/eiri/static/;
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        try_files $uri @node;
+    }
+
+    location @node {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
     location / {
         proxy_pass         http://127.0.0.1:3000;
         proxy_http_version 1.1;

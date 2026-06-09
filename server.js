@@ -1,6 +1,7 @@
 require('dotenv').config()
 
 const express          = require('express')
+const compression      = require('compression')
 const session          = require('express-session')
 const bcrypt           = require('bcryptjs')
 const { DatabaseSync } = require('node:sqlite')
@@ -65,8 +66,14 @@ async function putToS3(file) {
 }
 
 app.set('trust proxy', 1)
+app.use(compression())
 app.use(express.json())
-app.use('/static', express.static(path.join(__dirname, 'static')))
+app.use('/static', express.static(path.join(__dirname, 'static'), {
+  maxAge: '7d',
+  immutable: false,
+  etag: true,
+  lastModified: true,
+}))
 app.use(session({
   secret:            process.env.SECRET_KEY || 'eiri-dev-secret-change-in-prod',
   resave:            false,
