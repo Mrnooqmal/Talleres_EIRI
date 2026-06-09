@@ -21,10 +21,10 @@ body.sesion-page { overflow-x: hidden; }
 /* ─── Breadcrumb ──────────────────────────────────────── */
 .ses-breadcrumb {
   position: fixed;
-  top: var(--nav-h, 56px);
+  top: var(--header-h);
   left: var(--ses-sidebar-w);
   right: 0;
-  z-index: 40;
+  z-index: 999;
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -34,6 +34,12 @@ body.sesion-page { overflow-x: hidden; }
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(33, 150, 243, 0.1);
+  transition: top 0.4s var(--ease-out, ease);
+}
+/* When header collapses on scroll, breadcrumb moves up */
+.site-header.scrolled ~ .ses-layout .ses-breadcrumb,
+body.scrolled .ses-breadcrumb {
+  top: var(--nav-h);
 }
 .ses-bc-link {
   display: inline-flex;

@@ -232,6 +232,7 @@ function initNavbar() {
 
     window.addEventListener('scroll', () => {
         header.classList.toggle('scrolled', window.scrollY > 40);
+        document.body.classList.toggle('scrolled', window.scrollY > 40);
     }, { passive: true });
 
     burger?.addEventListener('click', () => {
