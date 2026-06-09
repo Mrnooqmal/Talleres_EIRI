@@ -20,11 +20,19 @@ body.sesion-page { overflow-x: hidden; }
 
 /* ─── Breadcrumb ──────────────────────────────────────── */
 .ses-breadcrumb {
+  position: sticky;
+  top: var(--nav-h, 56px);
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
-  margin-bottom: 1.75rem;
+  margin: 0 -3rem 1.75rem;
+  padding: 0.6rem 3rem;
+  background: rgba(8, 14, 26, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(33, 150, 243, 0.08);
 }
 .ses-bc-link {
   display: inline-flex;
