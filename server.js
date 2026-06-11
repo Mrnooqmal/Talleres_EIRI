@@ -220,6 +220,7 @@ async function initDB() {
     hero_description: 'Construye, programa y combate. Aprende electrónica, mecánica y código mientras diseñas tu propio robot de batalla.',
     year: '2026', contact: '',
     about_description: 'El Equipo Interdisciplinario de Robótica e Innovación de la Universidad del Desarrollo organiza talleres para estudiantes apasionados por la tecnología, la ingeniería y el diseño.',
+    stat_sessions: '6', stat_participants: '30', stat_robots: '8',
     social_instagram: '', social_github: '', social_email: '', social_discord: '',
   }
   for (const [k, v] of Object.entries(configDefaults)) {

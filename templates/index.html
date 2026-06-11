@@ -141,15 +141,15 @@
 
             <div class="stats-grid reveal reveal-delay">
                 <div class="stat-card">
-                    <div class="stat-num" data-target="6">0</div>
+                    <div class="stat-num" data-target="{{ config.stat_sessions or '6' }}">0</div>
                     <div class="stat-label">Sesiones</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-num" data-target="30" data-suffix="+">0</div>
+                    <div class="stat-num" data-target="{{ config.stat_participants or '30' }}" data-suffix="+">0</div>
                     <div class="stat-label">Participantes</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-num" data-target="8">0</div>
+                    <div class="stat-num" data-target="{{ config.stat_robots or '8' }}">0</div>
                     <div class="stat-label">Robots</div>
                 </div>
                 <div class="stat-card">
