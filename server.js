@@ -20,7 +20,7 @@ nunjucks.configure(path.join(__dirname, 'templates'), { autoescape: true, expres
 const S3_BUCKET     = process.env.S3_BUCKET || ''
 const S3_REGION     = process.env.AWS_REGION || 'sa-east-1'
 const S3_PUBLIC_URL = (process.env.S3_PUBLIC_URL || '').replace(/\/$/, '')
-const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf)$/i
+const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf|ino|c|cpp|h|hpp|py|js|ts|json|txt|md|csv)$/i
 
 const uploadsDir = path.join(__dirname, 'static', 'uploads')
 // Solo se usa disco local cuando NO hay S3 (en produccion las subidas van a S3)
