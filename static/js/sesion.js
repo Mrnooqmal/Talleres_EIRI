@@ -109,7 +109,10 @@ function buildAssetHTML(a) {
         // Solo permitir un identificador de lenguaje seguro; cualquier otra cosa
         // se trata como texto plano para que no rompa el atributo class ni el HTML.
         const rawLang = String(a.language || 'plaintext');
-        const lang = /^[a-z0-9#+.-]{1,20}$/i.test(rawLang) ? rawLang : 'plaintext';
+        const safe = /^[a-z0-9#+.-]{1,20}$/i.test(rawLang) ? rawLang : 'plaintext';
+        // Alias para que Prism reconozca lenguajes equivalentes (Arduino = C++, etc.)
+        const LANG_ALIAS = { ino: 'cpp', arduino: 'cpp', 'c++': 'cpp', h: 'cpp', hpp: 'cpp', py: 'python', js: 'javascript', ts: 'typescript', sh: 'bash', shell: 'bash' };
+        const lang = LANG_ALIAS[safe.toLowerCase()] || safe;
         return `
           <div class="asset-code">
             <div class="asset-code-bar">
