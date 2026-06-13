@@ -185,6 +185,7 @@ async function initDB() {
   // Migrations
   try { await db.run("ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT ''") } catch {}
   try { await db.run("ALTER TABLE admin_users ADD COLUMN is_super INTEGER DEFAULT 0") } catch {}
+  try { await db.run("ALTER TABLE teams ADD COLUMN logo TEXT DEFAULT ''") } catch {}
 
   // Seed admin user
   const hasUsers = await db.get('SELECT 1 FROM admin_users LIMIT 1')
@@ -222,6 +223,11 @@ async function initDB() {
     about_description: 'El Equipo Interdisciplinario de Robótica e Innovación de la Universidad del Desarrollo organiza talleres para estudiantes apasionados por la tecnología, la ingeniería y el diseño.',
     stat_sessions: '6', stat_participants: '30', stat_robots: '8',
     social_instagram: '', social_github: '', social_email: '', social_discord: '',
+    bracket_title: 'Llave del torneo',
+    bracket_subtitle: 'El camino hacia la corona Battlebots',
+    // Estructura del bracket de eliminación simple. Se regenera al cambiar el tamaño.
+    // { size, rounds: [ [ {a,b,scoreA,scoreB,winner}, ... ], ... ] }
+    bracket_data: JSON.stringify({ size: 8, rounds: emptyBracketRounds(8) }),
   }
   for (const [k, v] of Object.entries(configDefaults)) {
     await db.run('INSERT OR IGNORE INTO site_config (key, value) VALUES (?,?)', k, v)
@@ -261,6 +267,61 @@ function requireSuper(req, res, next) {
   if (!req.auth) return res.status(401).json({ error: 'No autorizado' })
   if (!req.auth.adminSuper) return res.status(403).json({ error: 'Solo el administrador principal puede gestionar cuentas' })
   next()
+}
+
+// ─── Bracket helpers ─────────────────────────────────
+const BRACKET_SIZES = [4, 8, 16]
+
+// Crea las rondas vacías de un bracket de eliminación simple para `size` equipos.
+// Ronda 0 = primera ronda (size/2 partidos); última ronda = final (1 partido).
+function emptyBracketRounds(size) {
+  const rounds = []
+  let matches = size / 2
+  while (matches >= 1) {
+    rounds.push(Array.from({ length: matches }, () => ({ a: null, b: null, scoreA: '', scoreB: '', winner: null })))
+    matches = Math.floor(matches / 2)
+  }
+  return rounds
+}
+
+// Propaga los ganadores: el ganador del partido i de la ronda r ocupa el slot
+// (a si i es par, b si impar) del partido floor(i/2) de la ronda r+1.
+function resolveBracket(bracket) {
+  const rounds = bracket.rounds || []
+  for (let r = 0; r < rounds.length - 1; r++) {
+    for (let i = 0; i < rounds[r].length; i++) {
+      const m = rounds[r][i]
+      const winnerTeam = m.winner === 'a' ? m.a : m.winner === 'b' ? m.b : null
+      const next = rounds[r + 1][Math.floor(i / 2)]
+      if (!next) continue
+      if (i % 2 === 0) next.a = winnerTeam
+      else            next.b = winnerTeam
+    }
+  }
+  return bracket
+}
+
+// Normaliza/valida un bracket entrante desde el admin.
+function sanitizeBracket(raw) {
+  let size = parseInt(raw?.size, 10)
+  if (!BRACKET_SIZES.includes(size)) size = 8
+  const base = emptyBracketRounds(size)
+  const inRounds = Array.isArray(raw?.rounds) ? raw.rounds : []
+  for (let r = 0; r < base.length; r++) {
+    for (let i = 0; i < base[r].length; i++) {
+      const src = inRounds[r]?.[i] || {}
+      const m = base[r][i]
+      // Solo la primera ronda acepta asignación directa de equipos; el resto se propaga.
+      if (r === 0) {
+        m.a = src.a != null ? parseInt(src.a, 10) : null
+        m.b = src.b != null ? parseInt(src.b, 10) : null
+      }
+      m.scoreA = String(src.scoreA ?? '').slice(0, 6)
+      m.scoreB = String(src.scoreB ?? '').slice(0, 6)
+      m.winner = src.winner === 'a' || src.winner === 'b' ? src.winner : null
+    }
+  }
+  return resolveBracket({ size, rounds: base })
 }
 
 // ─── Pages ───────────────────────────────────────────
@@ -617,10 +678,10 @@ app.get('/api/admin/teams', requireAdmin, async (req, res) => {
 })
 
 app.post('/api/admin/teams', requireAdmin, async (req, res) => {
-  const { name } = req.body
+  const { name, logo = '' } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'Nombre requerido' })
   try {
-    const r = await db.run('INSERT INTO teams (name) VALUES (?)', name.trim())
+    const r = await db.run('INSERT INTO teams (name, logo) VALUES (?,?)', name.trim(), logo)
     await log(req, 'create_team', name.trim())
     res.status(201).json({ id: r.lastInsertRowid })
   } catch {
@@ -629,10 +690,10 @@ app.post('/api/admin/teams', requireAdmin, async (req, res) => {
 })
 
 app.put('/api/admin/teams/:id', requireAdmin, async (req, res) => {
-  const { name } = req.body
+  const { name, logo = '' } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'Nombre requerido' })
   try {
-    await db.run('UPDATE teams SET name=? WHERE id=?', name.trim(), req.params.id)
+    await db.run('UPDATE teams SET name=?, logo=? WHERE id=?', name.trim(), logo, req.params.id)
     await log(req, 'update_team', req.params.id)
     res.json({ ok: true })
   } catch {
@@ -643,6 +704,39 @@ app.put('/api/admin/teams/:id', requireAdmin, async (req, res) => {
 app.delete('/api/admin/teams/:id', requireAdmin, async (req, res) => {
   await db.run('DELETE FROM teams WHERE id=?', req.params.id)
   await log(req, 'delete_team', req.params.id)
+  res.json({ ok: true })
+})
+
+// ─── Bracket ──────────────────────────────────────────
+
+// Devuelve el bracket resuelto junto con los equipos (para resolver logos/nombres).
+async function getBracketPayload() {
+  const cfg = await getConfig()
+  let data
+  try { data = JSON.parse(cfg.bracket_data || '{}') } catch { data = {} }
+  if (!Array.isArray(data.rounds)) data = { size: 8, rounds: emptyBracketRounds(8) }
+  const teams = await db.all('SELECT id, name, logo FROM teams ORDER BY id')
+  return {
+    title:    cfg.bracket_title || 'Llave del torneo',
+    subtitle: cfg.bracket_subtitle || '',
+    size:     data.size,
+    rounds:   resolveBracket(data).rounds,
+    teams,
+  }
+}
+
+app.get('/api/bracket', async (req, res) => {
+  res.json(await getBracketPayload())
+})
+
+app.put('/api/admin/bracket', requireAdmin, async (req, res) => {
+  const clean = sanitizeBracket(req.body)
+  await db.run('INSERT OR REPLACE INTO site_config (key, value) VALUES (?,?)', 'bracket_data', JSON.stringify(clean))
+  if (typeof req.body.title === 'string')
+    await db.run('INSERT OR REPLACE INTO site_config (key, value) VALUES (?,?)', 'bracket_title', req.body.title.slice(0, 120))
+  if (typeof req.body.subtitle === 'string')
+    await db.run('INSERT OR REPLACE INTO site_config (key, value) VALUES (?,?)', 'bracket_subtitle', req.body.subtitle.slice(0, 200))
+  await log(req, 'update_bracket', `size=${clean.size}`)
   res.json({ ok: true })
 })
 

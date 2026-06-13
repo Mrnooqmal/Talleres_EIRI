@@ -8,7 +8,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
 
@@ -180,6 +180,24 @@
                 <div class="label" style="margin-bottom:0.6rem">Competencias</div>
                 <h3 class="section-subtitle">Resultados</h3>
                 <div id="sessionRankings"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="bracket" class="section bracket-section">
+    <div class="bracket-glow"></div>
+    <div class="container">
+        <div class="section-header reveal">
+            <div class="label label--gold">Torneo</div>
+            <h2 class="section-title" id="bracketTitle">Llave del torneo</h2>
+            <p class="section-desc" id="bracketSubtitle"></p>
+        </div>
+        <div class="bracket-scroll">
+            <div id="bracketBoard" class="bracket-board">
+                <div class="bracket-loading">
+                    <i data-lucide="loader-2" class="spin"></i> Cargando llave...
+                </div>
             </div>
         </div>
     </div>

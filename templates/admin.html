@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin EIRI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/admin.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
@@ -44,6 +44,10 @@
             <button class="adm-nav-item" data-view="rankings">
                 <i data-lucide="trophy"></i>
                 <span>Ranking</span>
+            </button>
+            <button class="adm-nav-item" data-view="bracket">
+                <i data-lucide="git-merge"></i>
+                <span>Torneo</span>
             </button>
             <button class="adm-nav-item" data-view="tutores">
                 <i data-lucide="users"></i>
@@ -270,6 +274,58 @@
                 </button>
             </div>
             <div id="rankingsList"></div>
+        </div>
+
+        <!-- Bracket view -->
+        <div id="view-bracket" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Llave del torneo</h2>
+                    <p class="adm-sub">Arrastra los equipos a la primera ronda; los ganadores avanzan solos</p>
+                </div>
+                <button class="btn-primary" id="saveBracketBtn">
+                    <i data-lucide="save"></i> Guardar llave
+                </button>
+            </div>
+
+            <div class="bk-admin-head">
+                <div class="cfg-row-2">
+                    <div class="field-group">
+                        <label>Título de la sección</label>
+                        <input type="text" id="bk-title" placeholder="Llave del torneo">
+                    </div>
+                    <div class="field-group">
+                        <label>Subtítulo</label>
+                        <input type="text" id="bk-subtitle" placeholder="El camino hacia la corona">
+                    </div>
+                </div>
+                <div class="field-group bk-size-field">
+                    <label>Tamaño del cuadro</label>
+                    <div class="bk-size-toggle" id="bkSizeToggle">
+                        <button type="button" data-size="4">4 equipos</button>
+                        <button type="button" data-size="8">8 equipos</button>
+                        <button type="button" data-size="16">16 equipos</button>
+                    </div>
+                </div>
+                <p class="bk-admin-hint">
+                    <i data-lucide="info"></i>
+                    Cambiar el tamaño reinicia las posiciones. Recuerda guardar.
+                </p>
+            </div>
+
+            <div class="bk-admin-layout">
+                <aside class="bk-pool">
+                    <div class="bk-pool-title"><i data-lucide="users"></i> Equipos</div>
+                    <div id="bkPool" class="bk-pool-list"></div>
+                    <p class="bk-pool-empty" id="bkPoolEmpty" hidden>
+                        Crea equipos en la sección <strong>Equipos</strong> para poder colocarlos.
+                    </p>
+                </aside>
+                <div class="bk-admin-board-wrap">
+                    <div id="bkAdminBoard" class="bk-admin-board"></div>
+                </div>
+            </div>
+            <p class="cfg-feedback" id="bracketFeedback"></p>
         </div>
 
         <!-- Tutores view -->

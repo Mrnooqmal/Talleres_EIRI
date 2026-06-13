@@ -96,6 +96,7 @@ document.querySelectorAll('.adm-nav-item[data-view]').forEach(btn => {
     if (btn.dataset.view === 'gallery')  loadGalleryAdmin();
     if (btn.dataset.view === 'rankings') loadRankingsAdmin();
     if (btn.dataset.view === 'teams')    loadTeamsAdmin();
+    if (btn.dataset.view === 'bracket')  loadBracketAdmin();
     if (btn.dataset.view === 'feedback') loadFeedback();
   });
 });
@@ -1165,25 +1166,30 @@ function deleteRanking(id, team) {
 }
 
 // Teams
+let teamsCache = [];
+
 async function loadTeamsAdmin() {
   const container = document.getElementById('teamsList');
   if (!container) return;
   try {
     const teams = await api('GET', '/api/admin/teams');
+    teamsCache = teams;
     if (!teams.length) {
       container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Sin equipos registrados.</p>';
       return;
     }
     container.innerHTML = `
       <table class="logs-table">
-        <thead><tr><th>#</th><th>Equipo</th><th>Creado</th><th></th></tr></thead>
+        <thead><tr><th></th><th>Equipo</th><th>Creado</th><th></th></tr></thead>
         <tbody>
-          ${teams.map((t, i) => `<tr>
-            <td>${String(i+1).padStart(2,'0')}</td>
+          ${teams.map((t) => `<tr>
+            <td>${t.logo
+              ? `<img src="${escHtml(t.logo)}" alt="" class="team-logo-thumb">`
+              : `<span class="team-logo-thumb team-logo-thumb--ph">${escHtml((t.name[0]||'?').toUpperCase())}</span>`}</td>
             <td><strong>${escHtml(t.name)}</strong></td>
             <td>${(t.created_at || '').slice(0,10)}</td>
             <td style="display:flex;gap:.4rem">
-              <button class="btn-icon" onclick="editTeam(${t.id},'${escHtml(t.name)}')" title="Editar"><i data-lucide="edit-2"></i></button>
+              <button class="btn-icon" onclick="editTeam(${t.id})" title="Editar"><i data-lucide="edit-2"></i></button>
               <button class="btn-icon btn-del" onclick="deleteTeam(${t.id},'${escHtml(t.name)}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
             </td>
           </tr>`).join('')}
@@ -1195,34 +1201,88 @@ async function loadTeamsAdmin() {
   }
 }
 
-document.getElementById('addTeamBtn')?.addEventListener('click', () => {
-  openModal('Nuevo equipo', `
+// Campos compartidos del formulario de equipo (nombre + logo con upload/preview)
+function teamFormHTML(team = {}) {
+  return `
     <div class="field-group">
       <label>Nombre del equipo</label>
-      <input type="text" id="f-team-name" placeholder="Ej: Team Destroyer">
+      <input type="text" id="f-team-name" value="${escHtml(team.name || '')}" placeholder="Ej: Team Destroyer">
     </div>
-  `, async () => {
+    <div class="field-group">
+      <label>Logo del equipo</label>
+      <div class="team-logo-edit">
+        <div class="team-logo-preview" id="f-team-logo-prev">
+          ${team.logo
+            ? `<img src="${escHtml(team.logo)}" alt="">`
+            : `<span><i data-lucide="image"></i></span>`}
+        </div>
+        <div class="team-logo-actions">
+          <input type="text" id="f-team-logo" value="${escHtml(team.logo || '')}" placeholder="URL del logo o sube un archivo">
+          <button type="button" class="btn-ghost btn--sm" id="f-team-logo-btn"><i data-lucide="upload"></i> Subir logo</button>
+          <input type="file" id="f-team-logo-file" accept=".png,.jpg,.jpeg,.gif,.webp,.svg" style="display:none">
+          <span id="f-team-logo-status" style="font-size:.72rem;color:var(--text-dim)"></span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function bindTeamLogoUpload() {
+  const input  = document.getElementById('f-team-logo');
+  const prev   = document.getElementById('f-team-logo-prev');
+  const btn    = document.getElementById('f-team-logo-btn');
+  const file   = document.getElementById('f-team-logo-file');
+  const status = document.getElementById('f-team-logo-status');
+  if (!input) return;
+  const refresh = () => {
+    prev.innerHTML = input.value.trim()
+      ? `<img src="${escHtml(input.value.trim())}" alt="">`
+      : `<span><i data-lucide="image"></i></span>`;
+    lucide.createIcons({ nodes: [prev] });
+  };
+  input.addEventListener('input', refresh);
+  btn?.addEventListener('click', () => file.click());
+  file?.addEventListener('change', async () => {
+    if (!file.files.length) return;
+    status.textContent = 'Subiendo...';
+    try {
+      const fd = new FormData();
+      fd.append('file', file.files[0]);
+      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      input.value = data.url;
+      refresh();
+      status.textContent = 'Listo';
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+    }
+  });
+}
+
+document.getElementById('addTeamBtn')?.addEventListener('click', () => {
+  openModal('Nuevo equipo', teamFormHTML(), async () => {
     const name = document.getElementById('f-team-name').value.trim();
+    const logo = document.getElementById('f-team-logo').value.trim();
     if (!name) return alert('Nombre requerido');
-    await api('POST', '/api/admin/teams', { name });
+    await api('POST', '/api/admin/teams', { name, logo });
     closeModal();
     loadTeamsAdmin();
   });
+  bindTeamLogoUpload();
 });
 
-function editTeam(id, currentName) {
-  openModal('Editar equipo', `
-    <div class="field-group">
-      <label>Nombre del equipo</label>
-      <input type="text" id="f-team-name" value="${escHtml(currentName)}">
-    </div>
-  `, async () => {
+function editTeam(id) {
+  const team = teamsCache.find(t => t.id === id) || {};
+  openModal('Editar equipo', teamFormHTML(team), async () => {
     const name = document.getElementById('f-team-name').value.trim();
+    const logo = document.getElementById('f-team-logo').value.trim();
     if (!name) return alert('Nombre requerido');
-    await api('PUT', `/api/admin/teams/${id}`, { name });
+    await api('PUT', `/api/admin/teams/${id}`, { name, logo });
     closeModal();
     loadTeamsAdmin();
   });
+  bindTeamLogoUpload();
 }
 
 function deleteTeam(id, name) {
@@ -1231,6 +1291,246 @@ function deleteTeam(id, name) {
     loadTeamsAdmin();
   });
 }
+
+// ─── Bracket admin ────────────────────────────────────
+let bkState = { size: 8, rounds: [], title: '', subtitle: '' };
+let bkTeams = [];
+let bkDirty = false;
+
+function bkEmptyRounds(size) {
+  const rounds = [];
+  let matches = size / 2;
+  while (matches >= 1) {
+    rounds.push(Array.from({ length: matches }, () => ({ a: null, b: null, scoreA: '', scoreB: '', winner: null })));
+    matches = Math.floor(matches / 2);
+  }
+  return rounds;
+}
+
+// Propaga ganadores (espejo de resolveBracket del servidor)
+function bkResolve() {
+  const r = bkState.rounds;
+  for (let i = 0; i < r.length - 1; i++) {
+    for (let j = 0; j < r[i].length; j++) {
+      const m = r[i][j];
+      const w = m.winner === 'a' ? m.a : m.winner === 'b' ? m.b : null;
+      // Si el ganador ya no es válido (equipo removido), lo limpiamos
+      if (m.winner === 'a' && m.a == null) m.winner = null;
+      if (m.winner === 'b' && m.b == null) m.winner = null;
+      const next = r[i + 1][Math.floor(j / 2)];
+      if (!next) continue;
+      if (j % 2 === 0) next.a = (m.winner ? w : null);
+      else             next.b = (m.winner ? w : null);
+    }
+  }
+  // Limpieza de ganadores en rondas avanzadas cuyos equipos quedaron nulos
+  for (const round of r) for (const m of round) {
+    if (m.winner === 'a' && m.a == null) m.winner = null;
+    if (m.winner === 'b' && m.b == null) m.winner = null;
+  }
+}
+
+const ROUND_NAMES = n => n === 1 ? 'Final' : n === 2 ? 'Semifinales' : n === 3 ? 'Cuartos' : n === 4 ? 'Octavos' : 'Ronda';
+
+async function loadBracketAdmin() {
+  const board = document.getElementById('bkAdminBoard');
+  if (!board) return;
+  try {
+    const data = await api('GET', '/api/bracket');
+    bkTeams = data.teams || [];
+    bkState = {
+      size: data.size || 8,
+      rounds: Array.isArray(data.rounds) && data.rounds.length ? data.rounds : bkEmptyRounds(data.size || 8),
+      title: data.title || '',
+      subtitle: data.subtitle || '',
+    };
+    bkDirty = false;
+    document.getElementById('bk-title').value    = bkState.title;
+    document.getElementById('bk-subtitle').value = bkState.subtitle;
+    bkSyncSizeToggle();
+    renderBracketAdmin();
+  } catch (e) {
+    board.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function bkSyncSizeToggle() {
+  document.querySelectorAll('#bkSizeToggle button').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.size) === bkState.size);
+  });
+}
+
+function bkTeamById(id) { return bkTeams.find(t => t.id === id); }
+
+function bkPlacedIds() {
+  const ids = new Set();
+  (bkState.rounds[0] || []).forEach(m => { if (m.a != null) ids.add(m.a); if (m.b != null) ids.add(m.b); });
+  return ids;
+}
+
+function renderBracketPool() {
+  const pool  = document.getElementById('bkPool');
+  const empty = document.getElementById('bkPoolEmpty');
+  if (!pool) return;
+  if (!bkTeams.length) { pool.innerHTML = ''; empty.hidden = false; return; }
+  empty.hidden = true;
+  const placed = bkPlacedIds();
+  pool.innerHTML = bkTeams.map(t => `
+    <div class="bk-pool-team ${placed.has(t.id) ? 'is-placed' : ''}" draggable="true" data-team="${t.id}">
+      ${t.logo ? `<img src="${escHtml(t.logo)}" alt="">` : `<span class="bk-pool-ph">${escHtml((t.name[0]||'?').toUpperCase())}</span>`}
+      <span class="bk-pool-name">${escHtml(t.name)}</span>
+    </div>`).join('');
+  lucide.createIcons({ nodes: [pool] });
+}
+
+function bkSlotHTML(teamId, r, m, side, editable) {
+  const t = teamId != null ? bkTeamById(teamId) : null;
+  const match = bkState.rounds[r][m];
+  const isWin = match.winner === side;
+  const cls = ['bk-ed-slot'];
+  if (editable) cls.push('bk-ed-slot--drop');
+  if (isWin) cls.push('bk-ed-slot--win');
+  if (!t) cls.push('bk-ed-slot--tbd');
+  return `<div class="${cls.join(' ')}" data-r="${r}" data-m="${m}" data-side="${side}">
+    ${t ? (t.logo ? `<img src="${escHtml(t.logo)}" alt="" class="bk-ed-logo">` : `<span class="bk-ed-logo bk-ed-logo--ph">${escHtml((t.name[0]||'?').toUpperCase())}</span>`) : ''}
+    <span class="bk-ed-name">${t ? escHtml(t.name) : 'Por definir'}</span>
+    ${t && isWin ? '<i data-lucide="check" class="bk-ed-check"></i>' : ''}
+    ${editable && t ? `<button class="bk-ed-clear" data-r="${r}" data-m="${m}" data-side="${side}" title="Quitar">&times;</button>` : ''}
+  </div>`;
+}
+
+function renderBracketAdmin() {
+  bkResolve();
+  const board = document.getElementById('bkAdminBoard');
+  renderBracketPool();
+  let html = '<div class="bk-ed-rounds">';
+  bkState.rounds.forEach((matches, r) => {
+    const roundsLeft = bkState.rounds.length - r;
+    html += `<div class="bk-ed-round"><div class="bk-ed-round-title">${ROUND_NAMES(roundsLeft)}</div><div class="bk-ed-matches">`;
+    matches.forEach((m, mi) => {
+      const editable = r === 0;
+      html += `<div class="bk-ed-match">
+        ${bkSlotHTML(m.a, r, mi, 'a', editable)}
+        <div class="bk-ed-scores">
+          <input type="text" class="bk-ed-score" data-r="${r}" data-m="${mi}" data-side="a" value="${escHtml(m.scoreA || '')}" maxlength="4" placeholder="–">
+          <span>:</span>
+          <input type="text" class="bk-ed-score" data-r="${r}" data-m="${mi}" data-side="b" value="${escHtml(m.scoreB || '')}" maxlength="4" placeholder="–">
+        </div>
+        ${bkSlotHTML(m.b, r, mi, 'b', editable)}
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  // Columna del campeón
+  const fin = bkState.rounds[bkState.rounds.length - 1]?.[0];
+  const champId = fin ? (fin.winner === 'a' ? fin.a : fin.winner === 'b' ? fin.b : null) : null;
+  const champ = champId != null ? bkTeamById(champId) : null;
+  html += `<div class="bk-ed-round bk-ed-champ-col"><div class="bk-ed-round-title bk-ed-round-title--gold">Campeón</div>
+    <div class="bk-ed-champ ${champ ? 'is-crowned' : ''}">
+      <i data-lucide="crown"></i>
+      <span>${champ ? escHtml(champ.name) : 'Por coronar'}</span>
+    </div></div>`;
+  html += '</div>';
+  board.innerHTML = html;
+  lucide.createIcons({ nodes: [board] });
+  bkBindBoardEvents();
+}
+
+function bkMarkDirty() {
+  bkDirty = true;
+  const fb = document.getElementById('bracketFeedback');
+  if (fb) { fb.textContent = 'Cambios sin guardar'; fb.className = 'cfg-feedback warn'; }
+}
+
+function bkBindBoardEvents() {
+  const board = document.getElementById('bkAdminBoard');
+  // Drag&drop de equipos del pool a slots de la primera ronda
+  document.querySelectorAll('.bk-pool-team').forEach(el => {
+    el.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('text/plain', el.dataset.team);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+  });
+  board.querySelectorAll('.bk-ed-slot--drop').forEach(slot => {
+    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('bk-drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('bk-drag-over'));
+    slot.addEventListener('drop', e => {
+      e.preventDefault();
+      slot.classList.remove('bk-drag-over');
+      const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      if (!Number.isFinite(id)) return;
+      const r = +slot.dataset.r, m = +slot.dataset.m, side = slot.dataset.side;
+      // Quitar el equipo de cualquier otro slot de la primera ronda (sin duplicados)
+      bkState.rounds[0].forEach(mt => { if (mt.a === id) mt.a = null; if (mt.b === id) mt.b = null; });
+      bkState.rounds[r][m][side] = id;
+      bkMarkDirty();
+      renderBracketAdmin();
+    });
+  });
+  // Quitar equipo de un slot
+  board.querySelectorAll('.bk-ed-clear').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const r = +btn.dataset.r, m = +btn.dataset.m, side = btn.dataset.side;
+      bkState.rounds[r][m][side] = null;
+      if (bkState.rounds[r][m].winner === side) bkState.rounds[r][m].winner = null;
+      bkMarkDirty();
+      renderBracketAdmin();
+    });
+  });
+  // Click en slot = marcar ganador (si hay equipo)
+  board.querySelectorAll('.bk-ed-slot').forEach(slot => {
+    slot.addEventListener('click', () => {
+      const r = +slot.dataset.r, m = +slot.dataset.m, side = slot.dataset.side;
+      const match = bkState.rounds[r][m];
+      const teamId = side === 'a' ? match.a : match.b;
+      if (teamId == null) return;
+      match.winner = match.winner === side ? null : side;
+      bkMarkDirty();
+      renderBracketAdmin();
+    });
+  });
+  // Inputs de marcador
+  board.querySelectorAll('.bk-ed-score').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const r = +inp.dataset.r, m = +inp.dataset.m, side = inp.dataset.side;
+      bkState.rounds[r][m][side === 'a' ? 'scoreA' : 'scoreB'] = inp.value;
+      bkDirty = true;
+    });
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+}
+
+// Toggle de tamaño
+document.getElementById('bkSizeToggle')?.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-size]');
+  if (!btn) return;
+  const size = Number(btn.dataset.size);
+  if (size === bkState.size) return;
+  confirm('Cambiar tamaño', `¿Cambiar a ${size} equipos? Se reiniciarán las posiciones actuales.`, () => {
+    bkState.size = size;
+    bkState.rounds = bkEmptyRounds(size);
+    bkSyncSizeToggle();
+    bkMarkDirty();
+    renderBracketAdmin();
+  });
+});
+
+document.getElementById('saveBracketBtn')?.addEventListener('click', async () => {
+  const fb = document.getElementById('bracketFeedback');
+  try {
+    await api('PUT', '/api/admin/bracket', {
+      size: bkState.size,
+      rounds: bkState.rounds,
+      title: document.getElementById('bk-title').value.trim(),
+      subtitle: document.getElementById('bk-subtitle').value.trim(),
+    });
+    bkDirty = false;
+    if (fb) { fb.textContent = 'Llave guardada'; fb.className = 'cfg-feedback ok'; }
+  } catch (e) {
+    if (fb) { fb.textContent = 'Error: ' + e.message; fb.className = 'cfg-feedback err'; }
+  }
+});
 
 // Global expose for inline onclick
 Object.assign(window, {

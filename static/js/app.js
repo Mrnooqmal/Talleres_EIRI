@@ -665,6 +665,97 @@ function initFeedback() {
   })
 }
 
+// ─── Bracket de torneo ────────────────────────────────
+// Nombres de ronda según cuántas rondas falten para la final.
+function bracketRoundName(roundsLeft) {
+  if (roundsLeft === 1) return 'Final';
+  if (roundsLeft === 2) return 'Semifinales';
+  if (roundsLeft === 3) return 'Cuartos de final';
+  if (roundsLeft === 4) return 'Octavos de final';
+  return 'Ronda';
+}
+
+async function loadBracket() {
+  const board = document.getElementById('bracketBoard');
+  if (!board) return;
+  try {
+    const data  = await fetch('/api/bracket').then(r => r.json());
+    const titleEl = document.getElementById('bracketTitle');
+    const subEl   = document.getElementById('bracketSubtitle');
+    if (titleEl && data.title) titleEl.textContent = data.title;
+    if (subEl)   subEl.textContent = data.subtitle || '';
+
+    const teamsById = {};
+    (data.teams || []).forEach(t => { teamsById[t.id] = t; });
+    const rounds = data.rounds || [];
+
+    // ¿Hay algún equipo colocado? Si no, mostramos un estado vacío elegante.
+    const anyTeam = rounds[0]?.some(m => m.a != null || m.b != null);
+    if (!anyTeam) {
+      board.innerHTML = `<div class="bracket-empty">
+        <i data-lucide="swords"></i>
+        <p>La llave del torneo se revelará pronto.</p>
+      </div>`;
+      lucide.createIcons({ nodes: [board] });
+      return;
+    }
+
+    const slot = (teamId, won, lost) => {
+      const t = teamId != null ? teamsById[teamId] : null;
+      const cls = ['bk-slot'];
+      if (won)  cls.push('bk-slot--win');
+      if (lost) cls.push('bk-slot--lose');
+      if (!t)   cls.push('bk-slot--tbd');
+      const logo = t?.logo
+        ? `<img src="${escapeHtml(t.logo)}" alt="" class="bk-logo">`
+        : `<span class="bk-logo bk-logo--ph">${t ? escapeHtml(t.name[0]) : '?'}</span>`;
+      const name = t ? escapeHtml(t.name) : 'Por definir';
+      return `<div class="${cls.join(' ')}">${logo}<span class="bk-name">${name}</span></div>`;
+    };
+
+    const champMatch = rounds[rounds.length - 1]?.[0];
+    const champId = champMatch
+      ? (champMatch.winner === 'a' ? champMatch.a : champMatch.winner === 'b' ? champMatch.b : null)
+      : null;
+    const champ = champId != null ? teamsById[champId] : null;
+
+    let html = '<div class="bracket-rounds">';
+    rounds.forEach((matches, r) => {
+      const roundsLeft = rounds.length - r;
+      html += `<div class="bk-round" style="--bk-r:${r}">
+        <div class="bk-round-title">${bracketRoundName(roundsLeft)}</div>
+        <div class="bk-matches">`;
+      matches.forEach(m => {
+        const aWon = m.winner === 'a', bWon = m.winner === 'b';
+        html += `<div class="bk-match">
+          ${slot(m.a, aWon, bWon)}
+          <div class="bk-score">${m.scoreA !== '' || m.scoreB !== '' ? `${escapeHtml(m.scoreA||'0')}<span>:</span>${escapeHtml(m.scoreB||'0')}` : 'vs'}</div>
+          ${slot(m.b, bWon, aWon)}
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+
+    // Columna del campeón (la corona).
+    html += `<div class="bk-round bk-champ-col" style="--bk-r:${rounds.length}">
+      <div class="bk-round-title bk-round-title--gold">Campeón</div>
+      <div class="bk-champ ${champ ? 'is-crowned' : ''}">
+        <i data-lucide="crown" class="bk-crown"></i>
+        ${champ
+          ? `${champ.logo ? `<img src="${escapeHtml(champ.logo)}" alt="" class="bk-champ-logo">` : `<span class="bk-champ-logo bk-logo--ph">${escapeHtml(champ.name[0])}</span>`}
+             <span class="bk-champ-name">${escapeHtml(champ.name)}</span>`
+          : `<span class="bk-champ-name bk-champ-name--tbd">Por coronar</span>`}
+      </div>
+    </div>`;
+    html += '</div>';
+
+    board.innerHTML = html;
+    lucide.createIcons({ nodes: [board] });
+  } catch (e) {
+    board.innerHTML = `<div class="bracket-empty"><p>No se pudo cargar la llave.</p></div>`;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initCarousel();
   initNavbar();
@@ -677,10 +768,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadGallery();
   loadTeams();
   loadRankings();
+  loadBracket();
   initFeedback();
   lucide.createIcons();
 });
 
+window.loadBracket     = loadBracket
 window.copyCode        = copyCode
 window.filterByTag     = filterByTag
 window.removeTagFilter = removeTagFilter
