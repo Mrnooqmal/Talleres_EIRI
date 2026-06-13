@@ -700,18 +700,33 @@ async function loadBracket() {
       return;
     }
 
-    const slot = (teamId, won, lost) => {
+    // Una fila de equipo dentro de la tarjeta de partido (logo · nombre · marcador)
+    const row = (teamId, score, won, decided) => {
       const t = teamId != null ? teamsById[teamId] : null;
-      const cls = ['bk-slot'];
-      if (won)  cls.push('bk-slot--win');
-      if (lost) cls.push('bk-slot--lose');
-      if (!t)   cls.push('bk-slot--tbd');
+      const cls = ['bk-row'];
+      if (won) cls.push('bk-row--win');
+      else if (decided) cls.push('bk-row--lose');
+      if (!t) cls.push('bk-row--tbd');
       const logo = t?.logo
         ? `<img src="${escapeHtml(t.logo)}" alt="" class="bk-logo">`
-        : `<span class="bk-logo bk-logo--ph">${t ? escapeHtml(t.name[0]) : '?'}</span>`;
+        : `<span class="bk-logo bk-logo--ph">${t ? escapeHtml(t.name[0]) : '·'}</span>`;
       const name = t ? escapeHtml(t.name) : 'Por definir';
-      return `<div class="${cls.join(' ')}">${logo}<span class="bk-name">${name}</span></div>`;
+      return `<div class="${cls.join(' ')}">
+        ${logo}<span class="bk-name">${name}</span>
+        <span class="bk-row-score">${score !== '' ? escapeHtml(score) : ''}</span>
+      </div>`;
     };
+
+    // Tarjeta de partido con borde
+    const matchCard = (m) => {
+      const decided = m.winner === 'a' || m.winner === 'b';
+      return `<div class="bk-match"><div class="bk-card">
+        ${row(m.a, m.scoreA, m.winner === 'a', decided)}
+        ${row(m.b, m.scoreB, m.winner === 'b', decided)}
+      </div></div>`;
+    };
+
+    const colTitle = (roundsLeft) => `<div class="bk-round-title">${bracketRoundName(roundsLeft)}</div>`;
 
     const champMatch = rounds[rounds.length - 1]?.[0];
     const champId = champMatch
@@ -719,26 +734,31 @@ async function loadBracket() {
       : null;
     const champ = champId != null ? teamsById[champId] : null;
 
-    let html = '<div class="bracket-rounds">';
-    rounds.forEach((matches, r) => {
-      const roundsLeft = rounds.length - r;
-      html += `<div class="bk-round" style="--bk-r:${r}">
-        <div class="bk-round-title">${bracketRoundName(roundsLeft)}</div>
-        <div class="bk-matches">`;
-      matches.forEach(m => {
-        const aWon = m.winner === 'a', bWon = m.winner === 'b';
-        html += `<div class="bk-match">
-          ${slot(m.a, aWon, bWon)}
-          <div class="bk-score">${m.scoreA !== '' || m.scoreB !== '' ? `${escapeHtml(m.scoreA||'0')}<span>:</span>${escapeHtml(m.scoreB||'0')}` : 'vs'}</div>
-          ${slot(m.b, bWon, aWon)}
-        </div>`;
-      });
-      html += `</div></div>`;
-    });
+    const nFull = rounds.length;          // incluye la final
+    const sideRounds = nFull - 1;         // rondas a ambos lados (sin la final)
 
-    // Columna del campeón (la corona).
-    html += `<div class="bk-round bk-champ-col" style="--bk-r:${rounds.length}">
-      <div class="bk-round-title bk-round-title--gold">Campeón</div>
+    // Lado: 'left' usa la primera mitad de cada ronda; 'right' la segunda mitad.
+    const buildSide = (side) => {
+      // Para 'right' las columnas van de la más interna (cerca del centro) a la externa.
+      const order = side === 'left'
+        ? [...Array(sideRounds).keys()]                 // 0,1,2,...
+        : [...Array(sideRounds).keys()].reverse();      // ...,2,1,0
+      let h = `<div class="bk-side bk-side--${side}">`;
+      order.forEach(r => {
+        const matches = rounds[r];
+        const half = matches.length / 2;
+        const slice = side === 'left' ? matches.slice(0, half) : matches.slice(half);
+        h += `<div class="bk-round">${colTitle(nFull - r)}<div class="bk-matches">`;
+        slice.forEach(m => { h += matchCard(m); });
+        h += `</div></div>`;
+      });
+      return h + '</div>';
+    };
+
+    // Centro: final + campeón
+    const center = `<div class="bk-center">
+      <div class="bk-center-title">${bracketRoundName(1)}</div>
+      ${champMatch ? matchCard(champMatch) : ''}
       <div class="bk-champ ${champ ? 'is-crowned' : ''}">
         <i data-lucide="crown" class="bk-crown"></i>
         ${champ
@@ -747,9 +767,8 @@ async function loadBracket() {
           : `<span class="bk-champ-name bk-champ-name--tbd">Por coronar</span>`}
       </div>
     </div>`;
-    html += '</div>';
 
-    board.innerHTML = html;
+    board.innerHTML = `<div class="bracket-arena">${buildSide('left')}${center}${buildSide('right')}</div>`;
     lucide.createIcons({ nodes: [board] });
   } catch (e) {
     board.innerHTML = `<div class="bracket-empty"><p>No se pudo cargar la llave.</p></div>`;
