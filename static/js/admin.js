@@ -1383,55 +1383,71 @@ function renderBracketPool() {
   lucide.createIcons({ nodes: [pool] });
 }
 
-function bkSlotHTML(teamId, r, m, side, editable) {
+// Fila de equipo editable (logo · nombre · marcador · quitar). Clic = ganador.
+function bkRowHTML(teamId, r, m, side, editable) {
   const t = teamId != null ? bkTeamById(teamId) : null;
   const match = bkState.rounds[r][m];
   const isWin = match.winner === side;
-  const cls = ['bk-ed-slot'];
-  if (editable) cls.push('bk-ed-slot--drop');
-  if (isWin) cls.push('bk-ed-slot--win');
-  if (!t) cls.push('bk-ed-slot--tbd');
+  const cls = ['bk-ed-row'];
+  if (editable) cls.push('bk-ed-row--drop');
+  if (isWin) cls.push('bk-ed-row--win');
+  if (!t) cls.push('bk-ed-row--tbd');
+  const score = side === 'a' ? match.scoreA : match.scoreB;
   return `<div class="${cls.join(' ')}" data-r="${r}" data-m="${m}" data-side="${side}">
     ${t ? (t.logo ? `<img src="${escHtml(t.logo)}" alt="" class="bk-ed-logo">` : `<span class="bk-ed-logo bk-ed-logo--ph">${escHtml((t.name[0]||'?').toUpperCase())}</span>`) : ''}
     <span class="bk-ed-name">${t ? escHtml(t.name) : 'Por definir'}</span>
-    ${t && isWin ? '<i data-lucide="check" class="bk-ed-check"></i>' : ''}
+    <input type="text" class="bk-ed-score" data-r="${r}" data-m="${m}" data-side="${side}" value="${escHtml(score || '')}" maxlength="4" placeholder="–">
     ${editable && t ? `<button class="bk-ed-clear" data-r="${r}" data-m="${m}" data-side="${side}" title="Quitar">&times;</button>` : ''}
   </div>`;
 }
 
+function bkMatchCardEd(m, r, mi) {
+  const editable = r === 0;
+  return `<div class="bk-ed-match"><div class="bk-ed-card">
+    ${bkRowHTML(m.a, r, mi, 'a', editable)}
+    ${bkRowHTML(m.b, r, mi, 'b', editable)}
+  </div></div>`;
+}
+
+// Editor con la misma forma que el sitio: lados convergentes hacia la final central.
 function renderBracketAdmin() {
   bkResolve();
   const board = document.getElementById('bkAdminBoard');
   renderBracketPool();
-  let html = '<div class="bk-ed-rounds">';
-  bkState.rounds.forEach((matches, r) => {
-    const roundsLeft = bkState.rounds.length - r;
-    html += `<div class="bk-ed-round"><div class="bk-ed-round-title">${ROUND_NAMES(roundsLeft)}</div><div class="bk-ed-matches">`;
-    matches.forEach((m, mi) => {
-      const editable = r === 0;
-      html += `<div class="bk-ed-match">
-        ${bkSlotHTML(m.a, r, mi, 'a', editable)}
-        <div class="bk-ed-scores">
-          <input type="text" class="bk-ed-score" data-r="${r}" data-m="${mi}" data-side="a" value="${escHtml(m.scoreA || '')}" maxlength="4" placeholder="–">
-          <span>:</span>
-          <input type="text" class="bk-ed-score" data-r="${r}" data-m="${mi}" data-side="b" value="${escHtml(m.scoreB || '')}" maxlength="4" placeholder="–">
-        </div>
-        ${bkSlotHTML(m.b, r, mi, 'b', editable)}
-      </div>`;
+  const rounds = bkState.rounds;
+  const nFull = rounds.length;
+  const sideRounds = nFull - 1;
+
+  const buildSide = (side) => {
+    const order = side === 'left'
+      ? [...Array(sideRounds).keys()]
+      : [...Array(sideRounds).keys()].reverse();
+    let h = `<div class="bk-ed-side bk-ed-side--${side}">`;
+    order.forEach(r => {
+      const matches = rounds[r];
+      const half = matches.length / 2;
+      const offset = side === 'left' ? 0 : half;
+      const slice = side === 'left' ? matches.slice(0, half) : matches.slice(half);
+      h += `<div class="bk-ed-round"><div class="bk-ed-round-title">${ROUND_NAMES(nFull - r)}</div><div class="bk-ed-matches">`;
+      slice.forEach((m, k) => { h += bkMatchCardEd(m, r, offset + k); });
+      h += `</div></div>`;
     });
-    html += `</div></div>`;
-  });
-  // Columna del campeón
-  const fin = bkState.rounds[bkState.rounds.length - 1]?.[0];
+    return h + '</div>';
+  };
+
+  const fin = rounds[nFull - 1][0];
   const champId = fin ? (fin.winner === 'a' ? fin.a : fin.winner === 'b' ? fin.b : null) : null;
   const champ = champId != null ? bkTeamById(champId) : null;
-  html += `<div class="bk-ed-round bk-ed-champ-col"><div class="bk-ed-round-title bk-ed-round-title--gold">Campeón</div>
+  const center = `<div class="bk-ed-center">
+    <div class="bk-ed-round-title bk-ed-round-title--gold">${ROUND_NAMES(1)}</div>
+    ${bkMatchCardEd(fin, nFull - 1, 0)}
     <div class="bk-ed-champ ${champ ? 'is-crowned' : ''}">
       <i data-lucide="crown"></i>
       <span>${champ ? escHtml(champ.name) : 'Por coronar'}</span>
-    </div></div>`;
-  html += '</div>';
-  board.innerHTML = html;
+    </div>
+  </div>`;
+
+  board.innerHTML = `<div class="bk-ed-arena">${buildSide('left')}${center}${buildSide('right')}</div>`;
   lucide.createIcons({ nodes: [board] });
   bkBindBoardEvents();
 }
@@ -1451,7 +1467,7 @@ function bkBindBoardEvents() {
       e.dataTransfer.effectAllowed = 'move';
     });
   });
-  board.querySelectorAll('.bk-ed-slot--drop').forEach(slot => {
+  board.querySelectorAll('.bk-ed-row--drop').forEach(slot => {
     slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('bk-drag-over'); });
     slot.addEventListener('dragleave', () => slot.classList.remove('bk-drag-over'));
     slot.addEventListener('drop', e => {
@@ -1460,14 +1476,14 @@ function bkBindBoardEvents() {
       const id = parseInt(e.dataTransfer.getData('text/plain'), 10);
       if (!Number.isFinite(id)) return;
       const r = +slot.dataset.r, m = +slot.dataset.m, side = slot.dataset.side;
-      // Quitar el equipo de cualquier otro slot de la primera ronda (sin duplicados)
+      // Quitar el equipo de cualquier otra fila de la primera ronda (sin duplicados)
       bkState.rounds[0].forEach(mt => { if (mt.a === id) mt.a = null; if (mt.b === id) mt.b = null; });
       bkState.rounds[r][m][side] = id;
       bkMarkDirty();
       renderBracketAdmin();
     });
   });
-  // Quitar equipo de un slot
+  // Quitar equipo de una fila
   board.querySelectorAll('.bk-ed-clear').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
@@ -1478,8 +1494,8 @@ function bkBindBoardEvents() {
       renderBracketAdmin();
     });
   });
-  // Click en slot = marcar ganador (si hay equipo)
-  board.querySelectorAll('.bk-ed-slot').forEach(slot => {
+  // Click en fila = marcar ganador (si hay equipo)
+  board.querySelectorAll('.bk-ed-row').forEach(slot => {
     slot.addEventListener('click', () => {
       const r = +slot.dataset.r, m = +slot.dataset.m, side = slot.dataset.side;
       const match = bkState.rounds[r][m];
