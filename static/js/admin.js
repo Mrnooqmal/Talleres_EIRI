@@ -958,10 +958,10 @@ function galleryFormHTML(item = {}) {
       <input type="text" id="f-gal-title" value="${escHtml(item.title || '')}">
     </div>
     <div class="field-group" id="f-gal-url-wrap">
-      <label>URL o subir imagen</label>
-      <input type="text" id="f-gal-url" value="${escHtml(item.url || '')}" placeholder="https://... o deja vacío y sube archivo">
-      <div style="margin-top:0.4rem;display:flex;gap:0.5rem;align-items:center">
-        <button type="button" class="btn-ghost btn--sm" id="f-gal-upload-btn"><i data-lucide="upload"></i> Subir imagen</button>
+      <label>URL o subir imagen <span style="color:var(--text-dim);font-weight:400">(una por línea para carga masiva)</span></label>
+      <textarea id="f-gal-url" rows="2" placeholder="https://... o deja vacío y sube archivos">${escHtml(item.url || '')}</textarea>
+      <div style="margin-top:0.4rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn-ghost btn--sm" id="f-gal-upload-btn"><i data-lucide="upload"></i> Subir imágenes</button>
         <input type="file" id="f-gal-file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display:none" multiple>
         <span id="f-gal-upload-status" style="font-size:0.72rem;color:var(--text-dim)"></span>
       </div>

@@ -1338,16 +1338,11 @@ a.acc-session-title:hover { color: var(--blue-300); }
 
 .bracket-scroll {
   position: relative;
-  overflow-x: auto;
+  overflow-x: hidden;          /* sin scroll lateral: la llave se adapta al ancho */
   padding: 1rem 0.25rem 1.5rem;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--gold-700) transparent;
 }
-.bracket-scroll::-webkit-scrollbar { height: 8px; }
-.bracket-scroll::-webkit-scrollbar-thumb { background: var(--gold-700); border-radius: 4px; }
 
-.bracket-board { min-width: max-content; margin: 0 auto; }
+.bracket-board { width: 100%; }
 .bracket-loading, .bracket-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.8rem; padding: 4rem 1rem; color: var(--text-dim); text-align: center;
@@ -1357,8 +1352,8 @@ a.acc-session-title:hover { color: var(--blue-300); }
 
 /* Arena: lado izquierdo · centro (final + campeón) · lado derecho */
 .bracket-arena {
-  --bk-gap: 2.6rem;
-  --bk-stub: 1.3rem;
+  --bk-gap: clamp(0.6rem, 1.7vw, 2.4rem);
+  --bk-stub: calc(var(--bk-gap) / 2);   /* el stub = medio gap → conectores siempre alineados */
   --bk-line: rgba(201,162,39,0.55);
   display: flex;
   align-items: stretch;
@@ -1366,10 +1361,11 @@ a.acc-session-title:hover { color: var(--blue-300); }
   gap: var(--bk-gap);
   padding: 0.5rem;
   min-height: 320px;
+  width: 100%;
   animation: bkFade 0.6s var(--ease-out) backwards;
 }
-.bk-side { display: flex; align-items: stretch; gap: var(--bk-gap); }
-.bk-round { display: flex; flex-direction: column; min-width: 186px; }
+.bk-side { display: flex; align-items: stretch; gap: var(--bk-gap); min-width: 0; }
+.bk-round { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
 .bk-round-title, .bk-center-title {
   font-family: var(--f-mono);
   font-size: 0.58rem;
@@ -1439,7 +1435,7 @@ a.acc-session-title:hover { color: var(--blue-300); }
 }
 
 /* ── Centro: final + campeón ── */
-.bk-center { display: flex; flex-direction: column; min-width: 210px; position: relative; }
+.bk-center { display: flex; flex-direction: column; min-width: 0; position: relative; }
 .bk-center-title { color: var(--gold-400); border-color: rgba(201,162,39,0.3); }
 .bk-center .bk-match { flex: 1 1 0; }       /* centra la final a la misma altura que las semis */
 .bk-center .bk-card { border-color: rgba(227,189,63,0.5); box-shadow: 0 0 28px -12px var(--gold-glow); }
@@ -1472,9 +1468,11 @@ a.acc-session-title:hover { color: var(--blue-300); }
 @keyframes bkCrown { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
 @media (max-width: 640px) {
-  .bracket-arena { --bk-gap: 2rem; }
-  .bk-round, .bk-center { min-width: 150px; }
-  .bk-name { font-size: 0.74rem; }
+  .bk-row { padding: 0.4rem 0.45rem; gap: 0.4rem; }
+  .bk-logo { width: 18px; height: 18px; }
+  .bk-name { font-size: 0.68rem; }
+  .bk-row-score { font-size: 0.7rem; min-width: 0.9rem; }
+  .bk-round-title, .bk-center-title { font-size: 0.5rem; letter-spacing: 0.12em; }
 }
 
 /* ════════════════════════════════════════════════════════

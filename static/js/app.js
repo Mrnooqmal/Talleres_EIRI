@@ -743,7 +743,8 @@ async function loadBracket() {
       const order = side === 'left'
         ? [...Array(sideRounds).keys()]                 // 0,1,2,...
         : [...Array(sideRounds).keys()].reverse();      // ...,2,1,0
-      let h = `<div class="bk-side bk-side--${side}">`;
+      // flex proporcional al nº de rondas para que todas las columnas queden del mismo ancho
+      let h = `<div class="bk-side bk-side--${side}" style="flex:${sideRounds}">`;
       order.forEach(r => {
         const matches = rounds[r];
         const half = matches.length / 2;
@@ -755,8 +756,8 @@ async function loadBracket() {
       return h + '</div>';
     };
 
-    // Centro: final + campeón
-    const center = `<div class="bk-center">
+    // Centro: final + campeón (ocupa el ancho de una columna)
+    const center = `<div class="bk-center" style="flex:1">
       <div class="bk-center-title">${bracketRoundName(1)}</div>
       ${champMatch ? matchCard(champMatch) : ''}
       <div class="bk-champ ${champ ? 'is-crowned' : ''}">
