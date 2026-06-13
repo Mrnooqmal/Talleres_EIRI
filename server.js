@@ -268,6 +268,18 @@ function requireSuper(req, res, next) {
 app.get('/', async (req, res) => res.render('index.html', { config: await getConfig() }))
 app.get('/galeria', async (req, res) => res.render('galeria.html', { config: await getConfig() }))
 
+// Serializa a JSON seguro para incrustar dentro de un bloque <script>.
+// Sin esto, un asset que contenga "</script>", "<!--" o separadores unicode
+// cierra el script antes de tiempo y vuelca HTML crudo en la página.
+function jsonForScript(data) {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
 const SES_TYPE_LABELS = { code: 'Código', slides: 'Presentación', diagram: 'Imágenes', video: 'Video', markdown: 'Notas', link: 'Enlace', model3d: 'Modelo 3D' }
 const SES_TYPE_ICONS  = { code: 'code-2', slides: 'file-text', diagram: 'image', video: 'play-circle', markdown: 'align-left', link: 'link-2', model3d: 'package' }
 
@@ -297,7 +309,13 @@ app.get('/sesiones/:id', async (req, res) => {
   session.projects   = projects
   session.num_padded = String(session.number).padStart(2, '0')
   await log(req, 'view_session', session.id)
-  res.render('sesion.html', { config: await getConfig(), session })
+  res.render('sesion.html', {
+    config: await getConfig(),
+    session,
+    // JSON serializado de forma segura para incrustar dentro de <script>:
+    // escapamos las secuencias que cerrarían el tag o iniciarían un comentario HTML.
+    projects_json: jsonForScript(projects),
+  })
 })
 
 app.get('/admin/login', async (req, res) => {

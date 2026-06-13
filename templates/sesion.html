@@ -17,7 +17,7 @@
 
 <!-- Datos de sesión para el JS -->
 <script>
-window.SESSION_PROJECTS = {{ session.projects | dump | safe }};
+window.SESSION_PROJECTS = {{ projects_json | safe }};
 </script>
 
 <!-- Barra de progreso de lectura -->
