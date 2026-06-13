@@ -106,18 +106,26 @@ const SES_ASSET_ICONS = { code:'code-2', diagram:'cpu', slides:'file-text', vide
 
 function buildAssetHTML(a) {
     if (a.type === 'code') {
-        const lang = a.language || 'plaintext';
+        // Solo permitir un identificador de lenguaje seguro; cualquier otra cosa
+        // se trata como texto plano para que no rompa el atributo class ni el HTML.
+        const rawLang = String(a.language || 'plaintext');
+        const lang = /^[a-z0-9#+.-]{1,20}$/i.test(rawLang) ? rawLang : 'plaintext';
         return `
           <div class="asset-code">
             <div class="asset-code-bar">
               <i data-lucide="code-2"></i>
               <span class="asset-code-name">${escHtml(a.label)}</span>
-              <span class="lang-badge">${lang}</span>
+              <span class="lang-badge">${escHtml(lang)}</span>
               <button class="copy-btn" onclick="copyCode(this)">
                 <i data-lucide="copy"></i> Copiar
               </button>
             </div>
-            <pre><code class="language-${lang}">${escHtml(a.content)}</code></pre>
+            <div class="asset-code-body">
+              <pre><code class="language-${escHtml(lang)}">${escHtml(a.content)}</code></pre>
+              <button class="code-expand-btn" onclick="toggleCode(this)" type="button">
+                <i data-lucide="chevrons-down"></i> Ver código completo
+              </button>
+            </div>
           </div>`;
     }
     if (a.type === 'diagram') return buildDiagramHTML(a);
@@ -183,6 +191,28 @@ function copyCode(btn) {
         }, 2200);
     });
 }
+
+// ─── Expandir / colapsar código largo ─────────────────
+function toggleCode(btn) {
+    const body = btn.closest('.asset-code-body');
+    const expanded = body.classList.toggle('expanded');
+    btn.innerHTML = expanded
+        ? '<i data-lucide="chevrons-up"></i> Ver menos'
+        : '<i data-lucide="chevrons-down"></i> Ver código completo';
+    lucide.createIcons({ nodes: [btn] });
+    if (!expanded) body.closest('.asset-code').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+// Oculta el botón "Ver más" cuando el código no se desborda.
+function markOverflowingCode(root) {
+    (root || document).querySelectorAll('.asset-code-body').forEach(body => {
+        const pre = body.querySelector('pre');
+        if (pre && pre.scrollHeight - pre.clientHeight < 8) {
+            body.classList.add('no-overflow');
+        }
+    });
+}
+window.markOverflowingCode = markOverflowingCode;
 
 // ─── Lightbox ─────────────────────────────────────────
 function openLightbox(url, title, isVideo) {
