@@ -1549,3 +1549,110 @@ a.acc-session-title:hover { color: var(--blue-300); }
   max-width: 760px;
 }
 .sessions-section .section-header .section-desc { margin: 0; }
+
+/* ════════════════════════════════════════════════════════
+   REDISEÑO "ARENA TERMINAL" — panel de control industrial
+   Capa de override (solo visual). Rompe el molde de landing
+   genérico: encabezados asimétricos tipo readout, panel de
+   telemetría, botones con chaflán mecánico, textura blueprint.
+   ════════════════════════════════════════════════════════ */
+
+/* — Ritmo vertical asimétrico, con más aire abajo — */
+.section { padding: 7rem 0 8rem; }
+
+/* — Encabezados de sección: readout de panel, asimétrico y grande — */
+.section-header { text-align: left; max-width: 860px; margin-bottom: 3.25rem; }
+.section-header .section-desc { margin: 0; max-width: 62ch; }
+
+/* Kicker = línea de telemetría (regla + texto), no eyebrow flotante */
+.label { display: inline-flex; align-items: center; gap: 0.7rem; color: var(--blue-300); }
+.label::before {
+  content: ""; width: 34px; height: 1px; flex-shrink: 0;
+  background: linear-gradient(90deg, var(--blue-400), transparent);
+}
+.label--gold { color: var(--gold-300); }
+.label--gold::before { background: linear-gradient(90deg, var(--gold-400), transparent); }
+
+/* Título display con presencia real (squared, on-brand) */
+.section-title {
+  font-size: clamp(2rem, 6vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.98;
+  margin-top: 0.7rem;
+}
+
+/* — Textura blueprint sutil en las secciones oscuras (sin planicie) — */
+.sessions-section, .about-section, .rankings-section, .gallery-section, .feedback-section { position: relative; }
+.sessions-section::after, .about-section::after, .rankings-section::after,
+.gallery-section::after, .feedback-section::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(33,150,243,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(33,150,243,0.045) 1px, transparent 1px);
+  background-size: 58px 58px;
+  -webkit-mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000, transparent 82%);
+  mask-image: radial-gradient(ellipse 95% 65% at 50% 0%, #000, transparent 82%);
+}
+.sessions-section > .container, .about-section > .container, .rankings-section > .container,
+.gallery-section > .container, .feedback-section > .container { position: relative; z-index: 1; }
+
+/* — Stats: de 4 cajas idénticas a UN panel de telemetría con celdas — */
+.stats-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  border: 1px solid var(--border-md);
+  background: linear-gradient(180deg, rgba(13,22,37,0.55), rgba(8,14,26,0.55));
+  overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+}
+.stat-card {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  clip-path: none;
+  text-align: left;
+  padding: 1.7rem 1.5rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s var(--ease-out);
+}
+.stat-card::before, .stat-card::after { content: none; }
+.stat-card:nth-child(2n) { border-right: none; }
+.stat-card:nth-last-child(-n+2) { border-bottom: none; }
+.stat-card:hover { background: rgba(33,150,243,0.05); }
+.stat-num { font-family: var(--f-mono); font-size: clamp(2.3rem, 5vw, 3.3rem); color: var(--cyan); letter-spacing: -0.03em; }
+.stat-card:last-child .stat-num { color: var(--gold-400); }
+.stat-label { font-family: var(--f-mono); letter-spacing: 0.2em; margin-top: 0.5rem; }
+
+/* — Botones: chaflán mecánico (TR + BL) + glow angular vía drop-shadow — */
+.btn { border-radius: 0; clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px)); }
+.btn-primary { background: var(--blue-700); box-shadow: none; filter: drop-shadow(0 3px 9px rgba(21,101,192,0.32)); }
+.btn-primary:hover { background: var(--blue-400); box-shadow: none; filter: drop-shadow(0 7px 18px rgba(33,150,243,0.55)); transform: translateY(-2px); }
+
+/* — Marquee: de barra azul degradada a ticker de terminal — */
+.marquee-bar { background: var(--bg-1); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.marquee-bar::before { background: linear-gradient(to right, var(--bg-1), transparent); }
+.marquee-bar::after  { background: linear-gradient(to left, var(--bg-1), transparent); }
+.marquee-content span { color: var(--blue-200); }
+.marquee-content .mdot { width: 5px; height: 5px; background: var(--cyan); box-shadow: 0 0 7px var(--cyan); }
+
+/* — Galería: rompe la grilla de 3 iguales con un destacado a lo ancho — */
+@media (min-width: 760px) {
+  .gallery-grid--preview .gallery-item:first-child { grid-column: span 2; aspect-ratio: 16 / 9; }
+}
+
+/* — Radios más contenidos (menos "burbuja") — */
+.acc-session { border-radius: 12px; }
+.gallery-item { border-radius: 10px; }
+.feedback-cta { border-radius: 14px; text-align: left; }
+.feedback-cta .feedback-title, .feedback-cta .feedback-desc { margin-left: 0; margin-right: 0; }
+
+/* — Guardas responsive del rediseño — */
+@media (max-width: 768px) {
+  .section { padding: 4.5rem 0 5rem; }
+  .section-header { margin-bottom: 2.5rem; }
+}
+@media (max-width: 480px) {
+  .section-title { font-size: clamp(1.9rem, 9vw, 2.4rem); }
+}
