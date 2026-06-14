@@ -25,20 +25,8 @@ function initCarousel() {
 
   const slides = carousel.querySelectorAll('.carousel-slide');
   const dots   = carousel.querySelectorAll('.cdot');
-  const DURATION = 4200;
   let current  = 0;
   let timer;
-
-  // Halo de luz reactivo: toma el color del LED activo (efecto "el LED ilumina")
-  const halo = document.createElement('div');
-  halo.className = 'carousel-halo';
-  carousel.prepend(halo);
-
-  const glowOf = (i) => (slides[i].style.getPropertyValue('--glow') || '#2196F3').trim();
-
-  function applyGlow(i) {
-    carousel.style.setProperty('--active-glow', glowOf(i));
-  }
 
   function goTo(idx) {
     slides[current].classList.remove('active');
@@ -46,13 +34,10 @@ function initCarousel() {
     current = (idx + slides.length) % slides.length;
     slides[current].classList.add('active');
     dots[current].classList.add('active');
-    applyGlow(current);
-    // reinicia la animación de progreso del dot activo
-    carousel.style.setProperty('--cd-dur', `${DURATION}ms`);
   }
 
-  function start() { timer = setInterval(() => goTo(current + 1), DURATION); carousel.classList.add('is-playing'); }
-  function stop()  { clearInterval(timer); carousel.classList.remove('is-playing'); }
+  function start() { timer = setInterval(() => goTo(current + 1), 4000); }
+  function stop()  { clearInterval(timer); }
 
   dots.forEach(dot => {
     dot.addEventListener('click', () => { stop(); goTo(+dot.dataset.idx); start(); });
@@ -61,8 +46,6 @@ function initCarousel() {
   carousel.addEventListener('mouseenter', stop);
   carousel.addEventListener('mouseleave', start);
 
-  applyGlow(0);
-  carousel.style.setProperty('--cd-dur', `${DURATION}ms`);
   start();
 }
 

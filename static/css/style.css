@@ -199,27 +199,10 @@ button { cursor: pointer; }
   display: flex;
   align-items: center;
   justify-content: center;
-  --active-glow: #2196F3;
 }
-/* Halo de luz reactivo: se tiñe del color del LED activo */
-.carousel-halo {
-  position: absolute;
-  inset: -8%;
-  z-index: 0;
-  background-color: var(--active-glow);
-  -webkit-mask: radial-gradient(circle at 50% 46%, #000 0%, rgba(0,0,0,0.55) 32%, transparent 62%);
-          mask: radial-gradient(circle at 50% 46%, #000 0%, rgba(0,0,0,0.55) 32%, transparent 62%);
-  opacity: 0.4;
-  filter: blur(26px);
-  transition: background-color 0.8s var(--ease-out);
-  animation: haloPulse 4.2s ease-in-out infinite;
-  pointer-events: none;
-}
-@keyframes haloPulse { 0%,100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.06); opacity: 0.52; } }
 .carousel-slide {
   position: absolute;
   inset: 0;
-  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,7 +227,6 @@ button { cursor: pointer; }
 @keyframes ledFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 .carousel-dots {
   position: absolute;
-  z-index: 3;
   bottom: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
@@ -258,34 +240,14 @@ button { cursor: pointer; }
   border: none;
   background: rgba(255,255,255,0.22);
   cursor: pointer;
-  transition: all 0.35s var(--ease-out);
+  transition: all 0.35s ease;
   padding: 0;
-  position: relative;
-  overflow: hidden;
 }
-.cdot:hover { background: rgba(255,255,255,0.5); }
 .cdot.active {
-  width: 26px;
+  background: rgba(255,255,255,0.9);
+  width: 22px;
   border-radius: 4px;
-  background: rgba(255,255,255,0.25);
-  box-shadow: 0 0 10px -1px var(--active-glow, #fff);
 }
-/* Relleno de progreso del autoplay, teñido del color del LED activo */
-.cdot.active::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--active-glow, #fff);
-  transform-origin: left;
-  transform: scaleX(0);
-}
-.cdot.active::after {
-  animation: cdProgress var(--cd-dur, 4200ms) linear forwards;
-}
-/* Al pasar el cursor (autoplay en pausa) congelamos el progreso */
-.hero-carousel:hover .cdot.active::after { animation-play-state: paused; }
-@keyframes cdProgress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
 .hero-kicker {
   display: inline-block;
