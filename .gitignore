@@ -15,3 +15,6 @@ terraform/.terraform.lock.hcl
 *.tfstate.*
 *.tfvars
 crash.log
+
+DESIGN.md 
+PRODUCT.md
