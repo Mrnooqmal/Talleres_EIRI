@@ -1637,9 +1637,24 @@ a.acc-session-title:hover { color: var(--blue-300); }
 .marquee-content span { color: var(--blue-200); }
 .marquee-content .mdot { width: 5px; height: 5px; background: var(--cyan); box-shadow: 0 0 7px var(--cyan); }
 
-/* — Galería: rompe la grilla de 3 iguales con un destacado a lo ancho — */
+/* — Galería (preview index): collage limpio sin huecos —
+   1 destacado grande a la izquierda + 2 apilados a la derecha.
+   Rellena un rectángulo completo (sin filas de distinta altura). */
 @media (min-width: 760px) {
-  .gallery-grid--preview .gallery-item:first-child { grid-column: span 2; aspect-ratio: 16 / 9; }
+  .gallery-grid--preview {
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    aspect-ratio: 5 / 2;
+    gap: 1rem;
+  }
+  .gallery-grid--preview .gallery-item { aspect-ratio: auto; height: 100%; }
+  /* destacado: columna izquierda, ambas filas */
+  .gallery-grid--preview .gallery-item:first-child { grid-row: 1 / 3; }
+  /* 1 solo ítem: ocupa todo el rectángulo */
+  .gallery-grid--preview .gallery-item:first-child:last-child { grid-column: 1 / -1; grid-row: 1 / -1; }
+  /* 2 ítems: dos columnas a altura completa, sin hueco abajo */
+  .gallery-grid--preview .gallery-item:first-child:nth-last-child(2),
+  .gallery-grid--preview .gallery-item:first-child:nth-last-child(2) ~ .gallery-item { grid-row: 1 / -1; }
 }
 
 /* — Radios más contenidos (menos "burbuja") — */
