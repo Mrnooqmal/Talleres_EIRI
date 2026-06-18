@@ -917,28 +917,25 @@ async function loadGalleryAdmin() {
       container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Sin elementos en la galería.</p>';
       return;
     }
-    container.innerHTML = `
-      <table class="logs-table">
-        <thead><tr><th>Vista previa</th><th>Tipo</th><th>Título</th><th>Caption</th><th>Orden</th><th></th></tr></thead>
-        <tbody>
-          ${items.map(it => {
-            const preview = it.type === 'image'
-              ? `<img src="${escHtml(it.url)}" style="height:40px;width:60px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="window.open('${escHtml(it.url)}','_blank')" title="Ver imagen">`
-              : `<a href="${escHtml(it.url)}" target="_blank" style="color:var(--blue-300);font-size:0.72rem">Ver video</a>`
-            return `<tr>
-              <td>${preview}</td>
-              <td>${it.type === 'video' ? 'Video' : 'Imagen'}</td>
-              <td><strong>${escHtml(it.title)}</strong></td>
-              <td>${escHtml(it.caption || '-')}</td>
-              <td>${it.order_index}</td>
-              <td style="display:flex;gap:.4rem">
-                <button class="btn-icon" onclick="editGalleryItem(${it.id})" title="Editar"><i data-lucide="edit-2"></i></button>
-                <button class="btn-icon btn-del" onclick="deleteGalleryItem(${it.id},'${escHtml(it.title)}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
-              </td>
-            </tr>`}).join('')}
-        </tbody>
-      </table>`;
+    container.innerHTML = items.map(it => {
+      const preview = it.type === 'image'
+        ? `<img src="${escHtml(it.url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.url)}','_blank')" title="Ver imagen">`
+        : `<span class="gal-drag-thumb gal-drag-thumb--video"><i data-lucide="play-circle"></i></span>`;
+      return `<div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
+        <span class="drag-handle" title="Arrastar para reordenar"><i data-lucide="grip-vertical"></i></span>
+        ${preview}
+        <div class="gal-drag-info">
+          <strong>${escHtml(it.title)}</strong>
+          ${it.caption ? `<span class="gal-drag-caption">${escHtml(it.caption)}</span>` : ''}
+        </div>
+        <div class="gal-drag-actions">
+          <button class="btn-icon" onclick="editGalleryItem(${it.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon btn-del" onclick="deleteGalleryItem(${it.id},'${escHtml(it.title)}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>`;
+    }).join('');
     lucide.createIcons({ nodes: [container] });
+    initDragDrop(container, '/api/admin/gallery/reorder');
   } catch (e) {
     container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
   }

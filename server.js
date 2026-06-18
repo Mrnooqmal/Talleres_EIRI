@@ -793,6 +793,13 @@ app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
   res.json({ ok: true })
 })
 
+app.patch('/api/admin/gallery/reorder', requireAdmin, async (req, res) => {
+  for (const { id, display_order } of (req.body || [])) {
+    await db.run('UPDATE gallery SET order_index=? WHERE id=?', display_order, id)
+  }
+  res.json({ ok: true })
+})
+
 // ─── Rankings public ──────────────────────────────────
 
 app.get('/api/rankings', async (req, res) => {
