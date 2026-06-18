@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css?v=20260615">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <style>
@@ -17,58 +20,78 @@
             padding: calc(var(--header-h) + 3rem) 0 3rem;
             text-align: center;
         }
-        .gallery-page-hero .section-title { color: var(--white); }
+
+        .gallery-page-hero .section-title {
+            color: var(--white);
+        }
+
         .gallery-page-grid {
             background: var(--bg-0);
             padding: 3rem 0 6rem;
         }
+
         .gallery-full-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
         }
-        @media (max-width: 900px) { .gallery-full-grid { grid-template-columns: repeat(2,1fr); } }
-        @media (max-width: 580px) { .gallery-full-grid { grid-template-columns: 1fr; } }
+
+        @media (max-width: 900px) {
+            .gallery-full-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 580px) {
+            .gallery-full-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-{% include "partials/_site_header.html" %}
+    {% include "partials/_site_header.html" %}
 
-<div class="gallery-page-hero">
-    <div class="container">
-        <div class="label">Momentos</div>
-        <h1 class="section-title" style="margin-top:0.4rem">Galería</h1>
-        <p class="section-desc" style="margin:0.8rem auto 0">Fotos y videos de los talleres, construcciones y la batalla final.</p>
+    <div class="gallery-page-hero">
+        <div class="container">
+            <div class="label">Momentos</div>
+            <h1 class="section-title" style="margin-top:0.4rem">Galería</h1>
+            <p class="section-desc" style="margin:0.8rem auto 0">Fotos y videos de los talleres, construcciones y la
+                batalla final.</p>
+        </div>
     </div>
-</div>
 
-<div class="gallery-page-grid">
-    <div class="container">
-        <div id="galleryFullGrid" class="gallery-full-grid">
-            <div class="gallery-empty" style="grid-column:1/-1">
-                <i data-lucide="image"></i>
-                <p style="margin-top:0.6rem">Sin contenido aún.</p>
+    <div class="gallery-page-grid">
+        <div class="container">
+            <div id="galleryFullGrid" class="gallery-full-grid">
+                <div class="gallery-empty" style="grid-column:1/-1">
+                    <i data-lucide="image"></i>
+                    <p style="margin-top:0.6rem">Sin contenido aún.</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-{% include "partials/_footer.html" %}
+    {% include "partials/_footer.html" %}
 
-<script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
-<script src="/static/js/app.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-    const grid = document.getElementById('galleryFullGrid');
-    try {
-        const items = await fetch('/api/gallery').then(r => r.json());
-        if (!items.length) return;
-        grid.innerHTML = items.map(buildGalleryItem).join('');
-        lucide.createIcons({ nodes: [grid] });
-    } catch {}
-    lucide.createIcons();
-});
-</script>
+    <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const grid = document.getElementById('galleryFullGrid');
+            try {
+                const items = await fetch('/api/gallery').then(r => r.json());
+                if (!items.length) return;
+                grid.innerHTML = items.map(buildGalleryItem).join('');
+                lucide.createIcons({ nodes: [grid] });
+            } catch { }
+            lucide.createIcons();
+        });
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
+
 </html>

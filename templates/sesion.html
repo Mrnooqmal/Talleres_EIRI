@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,179 +12,188 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="/static/css/style.css?v=20260615">
     <link rel="stylesheet" href="/static/css/sesion.css?v=3">
 </head>
+
 <body class="sesion-page">
 
-<!-- Datos de sesión para el JS -->
-<script>
-window.SESSION_PROJECTS = {{ projects_json | safe }};
-</script>
+    <!-- Datos de sesión para el JS -->
+    <script id="session-projects-data" type="application/json">
+        {{ projects_json | safe }}
+    </script>
+    <script>
+        window.SESSION_PROJECTS = JSON.parse(document.getElementById('session-projects-data').textContent);
+    </script>
 
-<!-- Barra de progreso de lectura -->
-<div class="ses-progress-bar" id="sesProgressBar"></div>
+    <!-- Barra de progreso de lectura -->
+    <div class="ses-progress-bar" id="sesProgressBar"></div>
 
-<!-- Header del sitio -->
-{% set nav_prefix = '/' %}
-{% include "partials/_site_header.html" %}
+    <!-- Header del sitio -->
+    {% set nav_prefix = '/' %}
+    {% include "partials/_site_header.html" %}
 
-<!-- Botón FAB para abrir índice en móvil -->
-<button class="ses-index-fab" id="indexToggle" aria-label="Mostrar índice de proyectos">
-    <i data-lucide="layout-list"></i>
-</button>
+    <!-- Botón FAB para abrir índice en móvil -->
+    <button class="ses-index-fab" id="indexToggle" aria-label="Mostrar índice de proyectos">
+        <i data-lucide="layout-list"></i>
+    </button>
 
-<div class="ses-layout">
+    <div class="ses-layout">
 
-    <!-- ── Sidebar índice (fijo) ── -->
-    <aside class="ses-sidebar" id="sesSidebar">
-        <div class="ses-sidebar-inner">
-            <div class="ses-sidebar-head">
-                <span class="ses-sidebar-label">SESIÓN {{ session.num_padded }}</span>
-                <span class="ses-sidebar-title">{{ session.title }}</span>
-                {% if session.date_text and session.date_text != 'Por definir' %}
-                <span class="ses-sidebar-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
-                {% endif %}
-            </div>
-
-            <nav class="ses-index" id="sesIndex">
-                {% for p in session.projects %}
-                <div class="ses-index-group" data-pid="{{ p.id }}">
-                    <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
-                        <span class="ses-index-num">{{ loop.index }}</span>
-                        <span class="ses-index-name">{{ p.title }}</span>
-                        {% if p.asset_count %}<span class="ses-index-count">{{ p.asset_count }}</span>{% endif %}
-                    </a>
-                    {% if p.type_summary %}
-                    <div class="ses-index-subs">
-                        {% for t in p.type_summary %}
-                        <a href="#{{ t.anchor }}" class="ses-index-sub">
-                            <i data-lucide="{{ t.icon }}"></i>
-                            <span>{{ t.label }}{% if t.count > 1 %} ({{ t.count }}){% endif %}</span>
-                        </a>
-                        {% endfor %}
-                    </div>
+        <!-- ── Sidebar índice (fijo) ── -->
+        <aside class="ses-sidebar" id="sesSidebar">
+            <div class="ses-sidebar-inner">
+                <div class="ses-sidebar-head">
+                    <span class="ses-sidebar-label">SESIÓN {{ session.num_padded }}</span>
+                    <span class="ses-sidebar-title">{{ session.title }}</span>
+                    {% if session.date_text and session.date_text != 'Por definir' %}
+                    <span class="ses-sidebar-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
                     {% endif %}
                 </div>
-                {% else %}
-                <p class="ses-index-empty">Sin proyectos aún.</p>
-                {% endfor %}
-            </nav>
-        </div>
-    </aside>
 
-    <div class="ses-sidebar-backdrop" id="sesSidebarBackdrop"></div>
-
-    <!-- ── Contenido principal ── -->
-    <main class="ses-main" id="sesMain">
-
-        <!-- Breadcrumb -->
-        <nav class="ses-breadcrumb" aria-label="Ubicación">
-            <a href="/" class="ses-bc-link"><i data-lucide="home"></i><span>Inicio</span></a>
-            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
-            <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
-            <i data-lucide="chevron-right" class="ses-bc-sep"></i>
-            <span class="ses-bc-current">Sesión {{ session.num_padded }}</span>
-        </nav>
-
-        <!-- Cabecera de la sesión -->
-        <div class="ses-hero">
-            <div class="ses-hero-meta">
-                <span class="ses-hero-num">SESIÓN {{ session.num_padded }}</span>
-                {% if session.status == 'active' %}
-                <span class="ses-badge badge-active"><i data-lucide="zap"></i> En curso</span>
-                {% elif session.status == 'completed' %}
-                <span class="ses-badge badge-completed"><i data-lucide="check-circle"></i> Completada</span>
-                {% else %}
-                <span class="ses-badge badge-upcoming"><i data-lucide="circle"></i> Próxima</span>
-                {% endif %}
-                {% if session.date_text and session.date_text != 'Por definir' %}
-                <span class="ses-hero-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
-                {% endif %}
-            </div>
-            <h1 class="ses-hero-title">{{ session.title }}</h1>
-            {% if session.description %}
-            <p class="ses-hero-desc">{{ session.description }}</p>
-            {% endif %}
-        </div>
-
-        <!-- Proyectos -->
-        {% if session.projects %}
-        <div class="ses-projects">
-            {% for p in session.projects %}
-            <section class="ses-project" id="project-{{ p.id }}">
-                <div class="ses-project-head">
-                    <div class="ses-project-num">{{ loop.index }}</div>
-                    <div class="ses-project-info">
-                        <h2 class="ses-project-title">{{ p.title }}</h2>
-                        {% if p.description %}<p class="ses-project-desc">{{ p.description }}</p>{% endif %}
-                        {% if p.tags_list %}
-                        <div class="ses-project-tags">
-                            {% for tag in p.tags_list %}
-                            <span class="ses-tag">#{{ tag }}</span>
+                <nav class="ses-index" id="sesIndex">
+                    {% for p in session.projects %}
+                    <div class="ses-index-group" data-pid="{{ p.id }}">
+                        <a href="#project-{{ p.id }}" class="ses-index-item" data-pid="{{ p.id }}">
+                            <span class="ses-index-num">{{ loop.index }}</span>
+                            <span class="ses-index-name">{{ p.title }}</span>
+                            {% if p.asset_count %}<span class="ses-index-count">{{ p.asset_count }}</span>{% endif %}
+                        </a>
+                        {% if p.type_summary %}
+                        <div class="ses-index-subs">
+                            {% for t in p.type_summary %}
+                            <a href="#{{ t.anchor }}" class="ses-index-sub">
+                                <i data-lucide="{{ t.icon }}"></i>
+                                <span>{{ t.label }}{% if t.count > 1 %} ({{ t.count }}){% endif %}</span>
+                            </a>
                             {% endfor %}
                         </div>
                         {% endif %}
                     </div>
-                    <button class="ses-copy-link" onclick="copyProjectLink('{{ p.id }}')" title="Copiar enlace a este proyecto">
-                        <i data-lucide="link"></i>
-                    </button>
+                    {% else %}
+                    <p class="ses-index-empty">Sin proyectos aún.</p>
+                    {% endfor %}
+                </nav>
+            </div>
+        </aside>
+
+        <div class="ses-sidebar-backdrop" id="sesSidebarBackdrop"></div>
+
+        <!-- ── Contenido principal ── -->
+        <main class="ses-main" id="sesMain">
+
+            <!-- Breadcrumb -->
+            <nav class="ses-breadcrumb" aria-label="Ubicación">
+                <a href="/" class="ses-bc-link"><i data-lucide="home"></i><span>Inicio</span></a>
+                <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+                <a href="/#sesiones" class="ses-bc-link">Sesiones</a>
+                <i data-lucide="chevron-right" class="ses-bc-sep"></i>
+                <span class="ses-bc-current">Sesión {{ session.num_padded }}</span>
+            </nav>
+
+            <!-- Cabecera de la sesión -->
+            <div class="ses-hero">
+                <div class="ses-hero-meta">
+                    <span class="ses-hero-num">SESIÓN {{ session.num_padded }}</span>
+                    {% if session.status == 'active' %}
+                    <span class="ses-badge badge-active"><i data-lucide="zap"></i> En curso</span>
+                    {% elif session.status == 'completed' %}
+                    <span class="ses-badge badge-completed"><i data-lucide="check-circle"></i> Completada</span>
+                    {% else %}
+                    <span class="ses-badge badge-upcoming"><i data-lucide="circle"></i> Próxima</span>
+                    {% endif %}
+                    {% if session.date_text and session.date_text != 'Por definir' %}
+                    <span class="ses-hero-date"><i data-lucide="calendar"></i>{{ session.date_text }}</span>
+                    {% endif %}
                 </div>
-                <div class="ses-assets" id="ses-assets-{{ p.id }}"></div>
-            </section>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="ses-empty">
-            <i data-lucide="inbox"></i>
-            <p>Esta sesión aún no tiene proyectos publicados.</p>
-        </div>
-        {% endif %}
+                <h1 class="ses-hero-title">{{ session.title }}</h1>
+                {% if session.description %}
+                <p class="ses-hero-desc">{{ session.description }}</p>
+                {% endif %}
+            </div>
 
-        <!-- Nav inferior -->
-        <div class="ses-footer-nav">
-            <a href="/#sesiones" class="btn btn-ghost-outline ses-back-btn">
-                <i data-lucide="arrow-left"></i>
-                Volver a sesiones
-            </a>
-        </div>
-    </main>
+            <!-- Proyectos -->
+            {% if session.projects %}
+            <div class="ses-projects">
+                {% for p in session.projects %}
+                <section class="ses-project" id="project-{{ p.id }}">
+                    <div class="ses-project-head">
+                        <div class="ses-project-num">{{ loop.index }}</div>
+                        <div class="ses-project-info">
+                            <h2 class="ses-project-title">{{ p.title }}</h2>
+                            {% if p.description %}<p class="ses-project-desc">{{ p.description }}</p>{% endif %}
+                            {% if p.tags_list %}
+                            <div class="ses-project-tags">
+                                {% for tag in p.tags_list %}
+                                <span class="ses-tag">#{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <button class="ses-copy-link" onclick="copyProjectLink('{{ p.id }}')"
+                            title="Copiar enlace a este proyecto">
+                            <i data-lucide="link"></i>
+                        </button>
+                    </div>
+                    <div class="ses-assets" id="ses-assets-{{ p.id }}"></div>
+                </section>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="ses-empty">
+                <i data-lucide="inbox"></i>
+                <p>Esta sesión aún no tiene proyectos publicados.</p>
+            </div>
+            {% endif %}
 
-</div>
+            <!-- Nav inferior -->
+            <div class="ses-footer-nav">
+                <a href="/#sesiones" class="btn btn-ghost-outline ses-back-btn">
+                    <i data-lucide="arrow-left"></i>
+                    Volver a sesiones
+                </a>
+            </div>
+        </main>
 
-{% include "partials/_footer.html" %}
+    </div>
 
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-<script src="/static/js/sesion.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
+    {% include "partials/_footer.html" %}
 
-    (window.SESSION_PROJECTS || []).forEach(p => {
-        const el = document.getElementById('ses-assets-' + p.id);
-        if (!el) return;
-        if (!p.assets.length && !p.locked.length) {
-            el.innerHTML = '<p class="ses-no-assets">Sin recursos publicados aún.</p>';
-            return;
-        }
-        el.innerHTML = renderSesionAssets(p.assets, p.locked, p.id);
-        lucide.createIcons({ nodes: [el] });
-        if (window.Prism) Prism.highlightAllUnder(el);
-        if (window.markOverflowingCode) markOverflowingCode(el);
-    });
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="/static/js/sesion.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
 
-    initSesion();
-});
-</script>
+            (window.SESSION_PROJECTS || []).forEach(p => {
+                const el = document.getElementById('ses-assets-' + p.id);
+                if (!el) return;
+                if (!p.assets.length && !p.locked.length) {
+                    el.innerHTML = '<p class="ses-no-assets">Sin recursos publicados aún.</p>';
+                    return;
+                }
+                el.innerHTML = renderSesionAssets(p.assets, p.locked, p.id);
+                lucide.createIcons({ nodes: [el] });
+                if (window.Prism) Prism.highlightAllUnder(el);
+                if (window.markOverflowingCode) markOverflowingCode(el);
+            });
 
+            initSesion();
+        });
+    </script>
+
+    <script defer src="/_vercel/insights/script.js"></script>
 </body>
+
 </html>

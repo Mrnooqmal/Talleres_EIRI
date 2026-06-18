@@ -18,3 +18,7 @@ crash.log
 
 DESIGN.md 
 PRODUCT.md
+
+# Backups
+backups/
+.vercel

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="/static/css/style.css?v=20260615">
 
@@ -19,250 +22,262 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://unpkg.com/dompurify/dist/purify.min.js"></script>
 </head>
+
 <body>
 
-{% set nav_prefix = '' %}
-{% include "partials/_site_header.html" %}
+    {% set nav_prefix = '' %}
+    {% include "partials/_site_header.html" %}
 
-<section id="home" class="hero">
-    <div class="hero-grid"></div>
-    <div class="hero-glow"></div>
+    <section id="home" class="hero">
+        <div class="hero-grid"></div>
+        <div class="hero-glow"></div>
 
-    <div class="hero-inner">
-        <div class="hero-content" data-aos>
-            <span class="hero-kicker">Talleres de Robótica</span>
+        <div class="hero-inner">
+            <div class="hero-content" data-aos>
+                <span class="hero-kicker">Talleres de Robótica</span>
 
-            <h1 class="hero-title">
-                <span class="glitch" data-text="{{ (config.subtitle or 'Battlebots 2026') | upper }}">{{ (config.subtitle or 'Battlebots 2026') | upper }}</span>
-            </h1>
+                <h1 class="hero-title">
+                    <span class="glitch" data-text="{{ (config.subtitle or 'Battlebots 2026') | upper }}">{{
+                        (config.subtitle or 'Battlebots 2026') | upper }}</span>
+                </h1>
 
-            <p class="hero-meta">Universidad del Desarrollo, Facultad de Ingeniería, Informática UDD</p>
-            <p class="hero-desc">{{ config.hero_description or '' }}</p>
+                <p class="hero-meta">Universidad del Desarrollo, Facultad de Ingeniería, Informática UDD</p>
+                <p class="hero-desc">{{ config.hero_description or '' }}</p>
 
-            <div class="hero-cta">
-                <a href="#sesiones" class="btn btn-primary">
-                    Ver sesiones
+                <div class="hero-cta">
+                    <a href="#sesiones" class="btn btn-primary">
+                        Ver sesiones
+                        <i data-lucide="arrow-right"></i>
+                    </a>
+                    <a href="#about" class="btn btn-ghost-outline">Conoce EIRI</a>
+                </div>
+            </div>
+
+            <div class="hero-carousel" id="heroCarousel">
+                <div class="carousel-slide active" style="--glow:#2196F3">
+                    <img src="/static/led_azul.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-slide" style="--glow:#FFD600">
+                    <img src="/static/led_amarillo.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-slide" style="--glow:#4CAF50">
+                    <img src="/static/led_verde.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-slide" style="--glow:#AB47BC">
+                    <img src="/static/led_morado.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-slide" style="--glow:#FF9800">
+                    <img src="/static/led_naranjo.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-slide" style="--glow:#F44336">
+                    <img src="/static/led_rojo.png" alt="" class="carousel-led">
+                </div>
+                <div class="carousel-dots">
+                    <button class="cdot active" data-idx="0" aria-label="LED 1"></button>
+                    <button class="cdot" data-idx="1" aria-label="LED 2"></button>
+                    <button class="cdot" data-idx="2" aria-label="LED 3"></button>
+                    <button class="cdot" data-idx="3" aria-label="LED 4"></button>
+                    <button class="cdot" data-idx="4" aria-label="LED 5"></button>
+                    <button class="cdot" data-idx="5" aria-label="LED 6"></button>
+                </div>
+            </div>
+        </div>
+
+        <a href="#sesiones" class="hero-scroll-cue" aria-label="Bajar">
+            <i data-lucide="arrow-down"></i>
+        </a>
+    </section>
+
+    <div class="marquee-bar">
+        <div class="marquee-content" id="marqueeContent"></div>
+    </div>
+
+    <section id="sesiones" class="section sessions-section">
+        <div class="deco-msc deco-msc--morado"><img src="/static/led_morado.png" alt="" class="msc-float-d"></div>
+        <div class="deco-msc deco-msc--rojo"><img src="/static/led_rojo.png" alt="" class="msc-float-b"></div>
+
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="label">Programa</div>
+                <h2 class="section-title">Sesiones</h2>
+                <p class="section-desc">Recursos organizados por sesión y proyecto. Encuentra código, diagramas y
+                    materiales en un solo lugar.</p>
+            </div>
+
+            <div class="sessions-search-wrap">
+                <div class="sessions-search">
+                    <i data-lucide="search"></i>
+                    <input type="text" id="sessionSearch" placeholder="Buscar sesiones, proyectos, etiquetas...">
+                    <button class="search-clear" id="searchClear" style="display:none" aria-label="Limpiar">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+                <div id="activeTagFilters" class="active-tag-filters"></div>
+            </div>
+
+            <div id="sessionsAccordion" class="sessions-accordion">
+                <div class="sessions-loading">
+                    <i data-lucide="loader-2" class="spin"></i>
+                    Cargando sesiones...
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="section about-section">
+        <div class="deco-msc deco-msc--verde"><img src="/static/led_verde.png" alt="" class="msc-float-c"></div>
+        <div class="deco-msc deco-msc--naranjo"><img src="/static/led_naranjo.png" alt="" class="msc-float-a"></div>
+
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-text reveal">
+                    <div class="label">Quiénes somos</div>
+                    <h2 class="section-title">EIRI</h2>
+                    <p class="body-text">
+                        {{ config.about_description or 'El Equipo Interdisciplinario de Robótica e Innovación de la
+                        Universidad del Desarrollo, compuesto de estudiantes de Ingeniería Civil Informática y Diseño e
+                        Interacción Digital, organiza talleres para estudiantes apasionados por la creación de hardware,
+                        el código y la innovación tecnológica.' }} </p>
+                    <p class="body-text">
+                        En la edición <strong>{{ config.year or '2026' }}-1</strong> exploramos el mundo de los
+                        <strong>Battlebots</strong>: robots de combate donde la electrónica, la mecánica y el código se
+                        unen en la arena.
+                    </p>
+                    <div class="chip-row">
+                        <span class="chip">Robótica</span>
+                        <span class="chip">Electrónica</span>
+                        <span class="chip">Programación</span>
+                        <span class="chip">Mecánica</span>
+                        <span class="chip">Innovación</span>
+                        <span class="chip">Impresión 3D</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid reveal reveal-delay">
+                    <div class="stat-card">
+                        <div class="stat-num" data-target="{{ config.stat_sessions or '6' }}">0</div>
+                        <div class="stat-label">Sesiones</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num" data-target="{{ config.stat_participants or '30' }}" data-suffix="+">0
+                        </div>
+                        <div class="stat-label">Participantes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num" data-target="{{ config.stat_robots or '8' }}">0</div>
+                        <div class="stat-label">Robots</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num" data-target="1">0</div>
+                        <div class="stat-label">Campeón</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ranking" class="section rankings-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="label">Competencia</div>
+                <h2 class="section-title">Ranking</h2>
+                <p class="section-desc">Equipos del torneo y resultados de las actividades de cada sesión.</p>
+            </div>
+
+            <div class="rankings-layout">
+                <div class="teams-col reveal">
+                    <div class="label" style="margin-bottom:0.6rem">Equipos inscritos</div>
+                    <h3 class="section-subtitle">Battlebots</h3>
+                    <div id="teamsTable"></div>
+                </div>
+
+                <div class="activities-col reveal reveal-delay">
+                    <div class="label" style="margin-bottom:0.6rem">Competencias</div>
+                    <h3 class="section-subtitle">Resultados</h3>
+                    <div id="sessionRankings"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="bracket" class="section bracket-section">
+        <div class="bracket-glow"></div>
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="label label--gold">Torneo</div>
+                <h2 class="section-title" id="bracketTitle">Llave del torneo</h2>
+                <p class="section-desc" id="bracketSubtitle"></p>
+            </div>
+            <div class="bracket-scroll">
+                <div id="bracketBoard" class="bracket-board">
+                    <div class="bracket-loading">
+                        <i data-lucide="loader-2" class="spin"></i> Cargando llave...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="galeria" class="section gallery-section">
+        <div class="container">
+            <div class="section-header reveal">
+                <div class="label">Momentos</div>
+                <h2 class="section-title">Galería</h2>
+                <p class="section-desc">Fotos y videos de los talleres, construcciones y la batalla final.</p>
+            </div>
+            <div id="galleryGrid" class="gallery-grid gallery-grid--preview"></div>
+            <div id="galleryMoreWrap" class="gallery-more" hidden>
+                <a href="/galeria" class="btn btn-ghost-outline">
+                    Ver galería completa
                     <i data-lucide="arrow-right"></i>
                 </a>
-                <a href="#about" class="btn btn-ghost-outline">Conoce EIRI</a>
             </div>
         </div>
+    </section>
 
-        <div class="hero-carousel" id="heroCarousel">
-            <div class="carousel-slide active" style="--glow:#2196F3">
-                <img src="/static/led_azul.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-slide" style="--glow:#FFD600">
-                <img src="/static/led_amarillo.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-slide" style="--glow:#4CAF50">
-                <img src="/static/led_verde.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-slide" style="--glow:#AB47BC">
-                <img src="/static/led_morado.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-slide" style="--glow:#FF9800">
-                <img src="/static/led_naranjo.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-slide" style="--glow:#F44336">
-                <img src="/static/led_rojo.png" alt="" class="carousel-led">
-            </div>
-            <div class="carousel-dots">
-                <button class="cdot active" data-idx="0" aria-label="LED 1"></button>
-                <button class="cdot" data-idx="1" aria-label="LED 2"></button>
-                <button class="cdot" data-idx="2" aria-label="LED 3"></button>
-                <button class="cdot" data-idx="3" aria-label="LED 4"></button>
-                <button class="cdot" data-idx="4" aria-label="LED 5"></button>
-                <button class="cdot" data-idx="5" aria-label="LED 6"></button>
-            </div>
-        </div>
-    </div>
-
-    <a href="#sesiones" class="hero-scroll-cue" aria-label="Bajar">
-        <i data-lucide="arrow-down"></i>
-    </a>
-</section>
-
-<div class="marquee-bar">
-    <div class="marquee-content" id="marqueeContent"></div>
-</div>
-
-<section id="sesiones" class="section sessions-section">
-    <div class="deco-msc deco-msc--morado"><img src="/static/led_morado.png" alt="" class="msc-float-d"></div>
-    <div class="deco-msc deco-msc--rojo"><img src="/static/led_rojo.png" alt="" class="msc-float-b"></div>
-
-    <div class="container">
-        <div class="section-header reveal">
-            <div class="label">Programa</div>
-            <h2 class="section-title">Sesiones</h2>
-            <p class="section-desc">Recursos organizados por sesión y proyecto. Encuentra código, diagramas y materiales en un solo lugar.</p>
-        </div>
-
-        <div class="sessions-search-wrap">
-            <div class="sessions-search">
-                <i data-lucide="search"></i>
-                <input type="text" id="sessionSearch" placeholder="Buscar sesiones, proyectos, etiquetas...">
-                <button class="search-clear" id="searchClear" style="display:none" aria-label="Limpiar">
-                    <i data-lucide="x"></i>
+    <section id="feedback" class="section feedback-section">
+        <div class="container">
+            <div class="feedback-cta reveal">
+                <h2 class="feedback-title">Cuéntanos tu experiencia</h2>
+                <p class="feedback-desc">¿Tienes comentarios o sugerencias?<br>
+                    Ayúdanos a mejorar los talleres. Tu opinión llega directo al equipo.</p>
+                <button class="btn btn-primary" id="openFeedbackBtn">
+                    <i data-lucide="message-square-plus"></i>
+                    Dejar un comentario
                 </button>
             </div>
-            <div id="activeTagFilters" class="active-tag-filters"></div>
         </div>
+    </section>
 
-        <div id="sessionsAccordion" class="sessions-accordion">
-            <div class="sessions-loading">
-                <i data-lucide="loader-2" class="spin"></i>
-                Cargando sesiones...
+    <div class="feedback-modal-backdrop" id="feedbackBackdrop">
+        <div class="feedback-modal">
+            <button class="feedback-modal-close" id="feedbackClose" aria-label="Cerrar"><i data-lucide="x"></i></button>
+            <h3 class="feedback-modal-title">Comentarios y sugerencias</h3>
+            <div class="field-group">
+                <label for="fb-name">Nombre (opcional)</label>
+                <input type="text" id="fb-name" placeholder="Tu nombre" maxlength="80" autocomplete="off">
+            </div>
+            <div class="field-group">
+                <label for="fb-message">Comentario</label>
+                <textarea id="fb-message" rows="4" placeholder="Cuéntanos qué piensas..." maxlength="2000"></textarea>
+            </div>
+            <div class="feedback-modal-actions">
+                <span class="feedback-feedback" id="fb-status"></span>
+                <button class="btn btn-primary" id="fb-send">Enviar</button>
             </div>
         </div>
     </div>
-</section>
 
-<section id="about" class="section about-section">
-    <div class="deco-msc deco-msc--verde"><img src="/static/led_verde.png" alt="" class="msc-float-c"></div>
-    <div class="deco-msc deco-msc--naranjo"><img src="/static/led_naranjo.png" alt="" class="msc-float-a"></div>
+    {% set nav_prefix = '' %}
+    {% include "partials/_footer.html" %}
 
-    <div class="container">
-        <div class="about-grid">
-            <div class="about-text reveal">
-                <div class="label">Quiénes somos</div>
-                <h2 class="section-title">EIRI</h2>
-                <p class="body-text">
-                    {{ config.about_description or 'El Equipo Interdisciplinario de Robótica e Innovación de la Universidad del Desarrollo, compuesto de estudiantes de Ingeniería Civil Informática y Diseño e Interacción Digital, organiza talleres para estudiantes apasionados por la creación de hardware, el código y la innovación tecnológica.' }}                 </p>
-                <p class="body-text">
-                    En la edición <strong>{{ config.year or '2026' }}-1</strong> exploramos el mundo de los <strong>Battlebots</strong>: robots de combate donde la electrónica, la mecánica y el código se unen en la arena.
-                </p>
-                <div class="chip-row">
-                    <span class="chip">Robótica</span>
-                    <span class="chip">Electrónica</span>
-                    <span class="chip">Programación</span>
-                    <span class="chip">Mecánica</span>
-                    <span class="chip">Innovación</span>
-                    <span class="chip">Impresión 3D</span>
-                </div>
-            </div>
-
-            <div class="stats-grid reveal reveal-delay">
-                <div class="stat-card">
-                    <div class="stat-num" data-target="{{ config.stat_sessions or '6' }}">0</div>
-                    <div class="stat-label">Sesiones</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-num" data-target="{{ config.stat_participants or '30' }}" data-suffix="+">0</div>
-                    <div class="stat-label">Participantes</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-num" data-target="{{ config.stat_robots or '8' }}">0</div>
-                    <div class="stat-label">Robots</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-num" data-target="1">0</div>
-                    <div class="stat-label">Campeón</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="ranking" class="section rankings-section">
-    <div class="container">
-        <div class="section-header reveal">
-            <div class="label">Competencia</div>
-            <h2 class="section-title">Ranking</h2>
-            <p class="section-desc">Equipos del torneo y resultados de las actividades de cada sesión.</p>
-        </div>
-
-        <div class="rankings-layout">
-            <div class="teams-col reveal">
-                <div class="label" style="margin-bottom:0.6rem">Equipos inscritos</div>
-                <h3 class="section-subtitle">Battlebots</h3>
-                <div id="teamsTable"></div>
-            </div>
-
-            <div class="activities-col reveal reveal-delay">
-                <div class="label" style="margin-bottom:0.6rem">Competencias</div>
-                <h3 class="section-subtitle">Resultados</h3>
-                <div id="sessionRankings"></div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="bracket" class="section bracket-section">
-    <div class="bracket-glow"></div>
-    <div class="container">
-        <div class="section-header reveal">
-            <div class="label label--gold">Torneo</div>
-            <h2 class="section-title" id="bracketTitle">Llave del torneo</h2>
-            <p class="section-desc" id="bracketSubtitle"></p>
-        </div>
-        <div class="bracket-scroll">
-            <div id="bracketBoard" class="bracket-board">
-                <div class="bracket-loading">
-                    <i data-lucide="loader-2" class="spin"></i> Cargando llave...
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="galeria" class="section gallery-section">
-    <div class="container">
-        <div class="section-header reveal">
-            <div class="label">Momentos</div>
-            <h2 class="section-title">Galería</h2>
-            <p class="section-desc">Fotos y videos de los talleres, construcciones y la batalla final.</p>
-        </div>
-        <div id="galleryGrid" class="gallery-grid gallery-grid--preview"></div>
-        <div id="galleryMoreWrap" class="gallery-more" hidden>
-            <a href="/galeria" class="btn btn-ghost-outline">
-                Ver galería completa
-                <i data-lucide="arrow-right"></i>
-            </a>
-        </div>
-    </div>
-</section>
-
-<section id="feedback" class="section feedback-section">
-    <div class="container">
-        <div class="feedback-cta reveal">
-            <h2 class="feedback-title">Cuéntanos tu experiencia</h2>
-            <p class="feedback-desc">¿Tienes comentarios o sugerencias?<br>
-                Ayúdanos a mejorar los talleres. Tu opinión llega directo al equipo.</p>
-            <button class="btn btn-primary" id="openFeedbackBtn">
-                <i data-lucide="message-square-plus"></i>
-                Dejar un comentario
-            </button>
-        </div>
-    </div>
-</section>
-
-<div class="feedback-modal-backdrop" id="feedbackBackdrop">
-    <div class="feedback-modal">
-        <button class="feedback-modal-close" id="feedbackClose" aria-label="Cerrar"><i data-lucide="x"></i></button>
-        <h3 class="feedback-modal-title">Comentarios y sugerencias</h3>
-        <div class="field-group">
-            <label for="fb-name">Nombre (opcional)</label>
-            <input type="text" id="fb-name" placeholder="Tu nombre" maxlength="80" autocomplete="off">
-        </div>
-        <div class="field-group">
-            <label for="fb-message">Comentario</label>
-            <textarea id="fb-message" rows="4" placeholder="Cuéntanos qué piensas..." maxlength="2000"></textarea>
-        </div>
-        <div class="feedback-modal-actions">
-            <span class="feedback-feedback" id="fb-status"></span>
-            <button class="btn btn-primary" id="fb-send">Enviar</button>
-        </div>
-    </div>
-</div>
-
-{% set nav_prefix = '' %}
-{% include "partials/_footer.html" %}
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-<script src="/static/js/app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
+
 </html>
