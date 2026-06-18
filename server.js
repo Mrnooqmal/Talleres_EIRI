@@ -497,10 +497,14 @@ app.delete('/api/admin/sessions/:id', requireAdmin, async (req, res) => {
 })
 
 app.patch('/api/admin/sessions/reorder', requireAdmin, async (req, res) => {
-  for (const { id, display_order } of (req.body || [])) {
-    await db.run('UPDATE workshop_sessions SET display_order=? WHERE id=?', display_order, id)
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE workshop_sessions SET display_order=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-  res.json({ ok: true })
 })
 
 app.patch('/api/admin/sessions/:id/status', requireAdmin, async (req, res) => {
@@ -535,10 +539,14 @@ app.put('/api/admin/projects/:id', requireAdmin, async (req, res) => {
 })
 
 app.patch('/api/admin/projects/reorder', requireAdmin, async (req, res) => {
-  for (const { id, display_order } of (req.body || [])) {
-    await db.run('UPDATE projects SET display_order=? WHERE id=?', display_order, id)
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE projects SET display_order=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-  res.json({ ok: true })
 })
 
 app.delete('/api/admin/projects/:id', requireAdmin, async (req, res) => {
@@ -794,10 +802,14 @@ app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
 })
 
 app.patch('/api/admin/gallery/reorder', requireAdmin, async (req, res) => {
-  for (const { id, display_order } of (req.body || [])) {
-    await db.run('UPDATE gallery SET order_index=? WHERE id=?', display_order, id)
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE gallery SET order_index=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-  res.json({ ok: true })
 })
 
 // ─── Rankings public ──────────────────────────────────
