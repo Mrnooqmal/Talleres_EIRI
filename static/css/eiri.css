@@ -184,11 +184,16 @@
 }
 
 /* ═══════════ Formulario estilo Google Forms (cada pregunta en bloque) ═══════════ */
-.forms-style { display: flex; flex-direction: column; gap: 1.6rem; }
+.forms-style { display: flex; flex-direction: column; gap: 1.8rem; }
+/* El <form> dentro de .forms-style también necesita flex para separar sus field-group */
+.forms-style .club-apply-form {
+  display: flex; flex-direction: column; gap: 1.8rem;
+}
 .forms-style .field-group {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
   padding: 1.5rem 1.6rem; transition: border-color 0.2s;
   display: flex; flex-direction: column; gap: 0.8rem;
+  margin-bottom: 0; /* el gap del form padre ya da la separación */
 }
 .forms-style .field-group:focus-within { border-color: var(--blue-400); }
 .forms-style label {
