@@ -163,6 +163,17 @@
   .postular-layout { grid-template-columns: 1fr; }
   .postular-intro { position: static; }
   .club-scroll-cue { right: 50%; transform: translateX(50%); }
+  .forms-style { gap: 1.4rem; }
+  .forms-style .field-group { padding: 1.25rem 1.25rem; }
+}
+
+@media (max-width: 600px) {
+  .postular-body { padding: 2rem 0 3rem; }
+  .postular-layout { gap: 2rem; }
+  .forms-style { gap: 1.2rem; }
+  .forms-style .field-group { padding: 1.1rem 1rem; border-radius: 12px; }
+  .forms-style .club-apply-actions { flex-direction: column; align-items: stretch; }
+  .forms-style .club-apply-actions .btn { width: 100%; text-align: center; justify-content: center; }
 }
 
 /* ═══════════ Movimiento reducido ═══════════ */
@@ -173,11 +184,11 @@
 }
 
 /* ═══════════ Formulario estilo Google Forms (cada pregunta en bloque) ═══════════ */
-.forms-style { display: flex; flex-direction: column; gap: 1.1rem; }
+.forms-style { display: flex; flex-direction: column; gap: 1.6rem; }
 .forms-style .field-group {
   background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
-  padding: 1.4rem 1.4rem; transition: border-color 0.2s;
-  display: flex; flex-direction: column; gap: 0.7rem;
+  padding: 1.5rem 1.6rem; transition: border-color 0.2s;
+  display: flex; flex-direction: column; gap: 0.8rem;
 }
 .forms-style .field-group:focus-within { border-color: var(--blue-400); }
 .forms-style label {
