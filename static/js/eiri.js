@@ -36,15 +36,26 @@ function observeReveals(root = document) {
 }
 
 // Hero landing: carrusel de fotos a pantalla completa (Swiper). Sin fotos → fallback elegante.
+// Optimizado: usa <img> con loading="lazy" y decoding="async" para slides no visibles,
+// y un efecto blur-up progresivo al cargar cada imagen.
 async function initHero() {
   const wrapper = document.getElementById('heroSlides');
   if (!wrapper) return;
   let imgs = [];
   try { imgs = await fetch('/api/club/banner').then(r => r.json()); } catch {}
   if (imgs.length) {
-    wrapper.innerHTML = imgs.map(b =>
-      `<div class="swiper-slide"><div class="hero-slide-img" style="background-image:url('${cssUrl(b.image_url)}')"></div></div>`
-    ).join('');
+    wrapper.innerHTML = imgs.map((b, i) => {
+      const isFirst = i === 0;
+      return `<div class="swiper-slide">
+        <img class="hero-slide-img hero-slide-img--loading"
+             src="${escapeHtml(b.image_url)}"
+             alt="${escapeHtml(b.caption || 'EIRI')}"
+             loading="${isFirst ? 'eager' : 'lazy'}"
+             decoding="${isFirst ? 'sync' : 'async'}"
+             fetchpriority="${isFirst ? 'high' : 'auto'}"
+             onload="this.classList.remove('hero-slide-img--loading')">
+      </div>`;
+    }).join('');
   }
   if (window.Swiper) {
     const multi = wrapper.children.length > 1;
@@ -53,6 +64,7 @@ async function initHero() {
       autoplay: multi ? { delay: 5500, disableOnInteraction: false } : false,
       pagination: { el: '.club-hero-pagination', clickable: true },
       allowTouchMove: multi,
+      lazy: { loadPrevNext: true, loadPrevNextAmount: 1 },
     });
   }
 }

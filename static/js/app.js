@@ -501,7 +501,7 @@ function buildGalleryItem(item) {
   const isVideo = item.type === 'video'
   const mediaHTML = isVideo
     ? `<div class="gallery-item-video"><i data-lucide="play-circle"></i></div>`
-    : `<img src="${item.url}" alt="${escapeHtml(item.title)}" loading="lazy">`
+    : `<img src="${item.url}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async">`
   const embedUrl = isVideo ? toEmbedUrl(item.url) : item.url
   return `
     <div class="gallery-item" onclick="openLightbox('${embedUrl.replace(/'/g,"\\'")}','${item.title.replace(/'/g,"\\'")}',${isVideo})">

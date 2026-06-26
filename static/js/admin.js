@@ -34,6 +34,85 @@ async function api(method, url, body) {
   return data;
 }
 
+// ─── Background upload con progreso ───────────────────
+// Sube archivos en background usando XHR para mostrar progreso.
+// Devuelve una promesa que resuelve con la URL del archivo subido.
+// `statusEl` se actualiza con el progreso en tiempo real.
+function uploadFileWithProgress(file, statusEl) {
+  return new Promise((resolve, reject) => {
+    const fd  = new FormData();
+    fd.append('file', file);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/admin/upload');
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && statusEl) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        statusEl.textContent = `📤 ${file.name}... ${pct}%`;
+      }
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const sizeKB = data.size ? `${Math.round(data.size / 1024)}KB` : '';
+          if (statusEl) statusEl.textContent = `✓ ${file.name}${sizeKB ? ` (${sizeKB})` : ''}`;
+          resolve(data);
+        } else {
+          const msg = data.error || 'Error al subir';
+          if (statusEl) statusEl.textContent = `✗ ${msg}`;
+          reject(new Error(msg));
+        }
+      } catch {
+        reject(new Error('Respuesta inválida del servidor'));
+      }
+    };
+    xhr.onerror = () => {
+      if (statusEl) statusEl.textContent = `✗ Error de red`;
+      reject(new Error('Error de red'));
+    };
+    xhr.send(fd);
+  });
+}
+
+// Cola de uploads pendientes: permite que el save espere si hay subidas en curso.
+let _pendingUploads = [];
+
+// Sube uno o más archivos en background sin bloquear la UI.
+// Retorna inmediatamente. La URL se coloca en `targetEl` al completar.
+async function backgroundUpload(files, targetEl, statusEl, multiLine = false) {
+  const uploads = Array.from(files).map(f => {
+    const p = uploadFileWithProgress(f, statusEl).then(data => data.url);
+    _pendingUploads.push(p);
+    p.finally(() => { _pendingUploads = _pendingUploads.filter(x => x !== p); });
+    return p;
+  });
+
+  if (files.length > 1 && statusEl) {
+    statusEl.textContent = `📤 Subiendo ${files.length} archivos...`;
+  }
+
+  try {
+    const urls = await Promise.all(uploads);
+    if (multiLine) {
+      targetEl.value = urls.join('\n');
+    } else {
+      targetEl.value = urls[0] || '';
+    }
+    if (statusEl && files.length > 1) {
+      statusEl.textContent = `✓ ${files.length} archivos subidos`;
+    }
+  } catch (e) {
+    if (statusEl) statusEl.textContent = `✗ ${e.message}`;
+  }
+}
+
+// Espera a que terminen todas las subidas pendientes (llamar antes de guardar).
+function waitForPendingUploads() {
+  return _pendingUploads.length ? Promise.all(_pendingUploads) : Promise.resolve();
+}
+
 // Modal
 const modalBackdrop = document.getElementById('modalBackdrop');
 const modalTitle    = document.getElementById('modalTitle');
@@ -64,7 +143,17 @@ function closeModal() {
 modalClose.addEventListener('click', closeModal);
 modalCancel.addEventListener('click', closeModal);
 modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
-modalSave.addEventListener('click', () => { if (modalSaveHandler) modalSaveHandler(); });
+modalSave.addEventListener('click', async () => {
+  if (!modalSaveHandler) return;
+  if (_pendingUploads.length) {
+    modalSave.textContent = 'Esperando subida...';
+    modalSave.disabled = true;
+    try { await waitForPendingUploads(); } catch {}
+    modalSave.textContent = 'Guardar';
+    modalSave.disabled = false;
+  }
+  modalSaveHandler();
+});
 
 // Confirm dialog
 const confirmBackdrop = document.getElementById('confirmBackdrop');
@@ -418,7 +507,7 @@ function renderAssets(assets, projectId, container) {
     html += '<div class="assets-grid">';
     html += imageAssets.map(a => `
       <div class="asset-image-card" data-aid="${a.id}">
-        <img src="${escHtml(a.content)}" alt="${escHtml(a.label)}">
+        <img src="${escHtml(a.content)}" alt="${escHtml(a.label)}" loading="lazy">
         <div class="asset-image-overlay">
           <span class="asset-item-label">${escHtml(a.label)}</span>
           <div class="si-actions">
@@ -557,35 +646,10 @@ function bindAssetFileHandlers() {
   }
 
   if (imgInput) {
-    imgInput.addEventListener('change', async () => {
-      const files = imgInput.files;
-      if (!files.length) return;
-
-      status.textContent = `Subiendo ${files.length} archivos...`;
-      saveBtn.disabled = true;
-      const urls = [];
-
-      for (const f of files) {
-        const fd = new FormData();
-        fd.append('file', f);
-        try {
-          const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error);
-          urls.push(data.url);
-        } catch (e) {
-          status.textContent = `Error: ${e.message}`;
-          saveBtn.disabled = false;
-          return;
-        }
-      }
-      
-      // Una URL por línea: si hay varias, addAsset crea un recurso por cada una.
-      ta.value = urls.join('\n');
-      status.textContent = files.length > 1
-        ? `${files.length} archivos subidos. Se creará un recurso por cada imagen al guardar.`
-        : `Subido: ${files[0].name}`;
-      saveBtn.disabled = false;
+    imgInput.addEventListener('change', () => {
+      if (!imgInput.files.length) return;
+      // Inicia subida en background sin bloquear
+      backgroundUpload(imgInput.files, ta, status, imgInput.files.length > 1);
     });
   }
 }
@@ -922,7 +986,7 @@ async function loadGalleryAdmin() {
     }
     container.innerHTML = items.map(it => {
       const preview = it.type === 'image'
-        ? `<img src="${escHtml(it.url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.url)}','_blank')" title="Ver imagen">`
+        ? `<img src="${escHtml(it.url)}" class="gal-drag-thumb" loading="lazy" onclick="window.open('${escHtml(it.url)}','_blank')" title="Ver imagen">`
         : `<span class="gal-drag-thumb gal-drag-thumb--video"><i data-lucide="play-circle"></i></span>`;
       return `<div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
         <span class="drag-handle" title="Arrastar para reordenar"><i data-lucide="grip-vertical"></i></span>
@@ -983,32 +1047,9 @@ function bindGalleryUpload() {
   const status = document.getElementById('f-gal-upload-status');
   if (!btn) return;
   btn.addEventListener('click', () => file.click());
-  file.addEventListener('change', async () => {
+  file.addEventListener('change', () => {
     if (!file.files.length) return;
-    
-    const files = Array.from(file.files);
-    status.textContent = `Subiendo ${files.length} archivos...`;
-    const urls = [];
-
-    for (const f of files) {
-      try {
-        const fd = new FormData();
-        fd.append('file', f);
-        const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
-        urls.push(data.url);
-      } catch (e) {
-        status.textContent = 'Error: ' + e.message;
-        return; // Stop on first error
-      }
-    }
-    
-    // Una URL por línea: si hay varias, se crea una entrada de galería por cada una al guardar.
-    urlEl.value = urls.join('\n');
-    status.textContent = files.length > 1
-      ? `${files.length} archivos subidos. Se creará una entrada por cada imagen al guardar.`
-      : `Subido: ${files[0].name}`;
+    backgroundUpload(file.files, urlEl, status, file.files.length > 1);
   });
 }
 
@@ -1098,7 +1139,7 @@ async function loadClubProjects() {
     }
     container.innerHTML = items.map(it => {
       const preview = it.image_url
-        ? `<img src="${escHtml(it.image_url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">`
+        ? `<img src="${escHtml(it.image_url)}" class="gal-drag-thumb" loading="lazy" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">`
         : `<span class="gal-drag-thumb gal-drag-thumb--video"><i data-lucide="cpu"></i></span>`;
       return `<div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
         <span class="drag-handle" title="Arrastrar para reordenar"><i data-lucide="grip-vertical"></i></span>
@@ -1152,20 +1193,9 @@ function bindClubUpload() {
   const status = document.getElementById('f-cp-upload-status');
   if (!btn) return;
   btn.addEventListener('click', () => file.click());
-  file.addEventListener('change', async () => {
+  file.addEventListener('change', () => {
     if (!file.files.length) return;
-    status.textContent = 'Subiendo...';
-    try {
-      const fd = new FormData();
-      fd.append('file', file.files[0]);
-      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      urlEl.value = data.url;
-      status.textContent = `Subido: ${file.files[0].name}`;
-    } catch (e) {
-      status.textContent = 'Error: ' + e.message;
-    }
+    backgroundUpload(file.files, urlEl, status);
   });
 }
 
@@ -1223,7 +1253,7 @@ async function loadClubBanner() {
     container.innerHTML = items.map(it => `
       <div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
         <span class="drag-handle" title="Arrastrar para reordenar"><i data-lucide="grip-vertical"></i></span>
-        <img src="${escHtml(it.image_url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">
+        <img src="${escHtml(it.image_url)}" class="gal-drag-thumb" loading="lazy" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">
         <div class="gal-drag-info"><strong>${escHtml(it.caption) || 'Sin descripción'}</strong></div>
         <div class="gal-drag-actions">
           <button class="btn-icon" onclick="editClubBanner(${it.id})" title="Editar"><i data-lucide="edit-2"></i></button>
@@ -1265,20 +1295,9 @@ function bindClubBannerUpload() {
   const status = document.getElementById('f-cb-upload-status');
   if (!btn) return;
   btn.addEventListener('click', () => file.click());
-  file.addEventListener('change', async () => {
+  file.addEventListener('change', () => {
     if (!file.files.length) return;
-    status.textContent = 'Subiendo...';
-    try {
-      const fd = new FormData();
-      fd.append('file', file.files[0]);
-      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      urlEl.value = data.url;
-      status.textContent = `Subido: ${file.files[0].name}`;
-    } catch (e) {
-      status.textContent = 'Error: ' + e.message;
-    }
+    backgroundUpload(file.files, urlEl, status);
   });
 }
 
@@ -1424,17 +1443,34 @@ function exportApplications() {
   const header = ['Fecha', ...labels];
   const data = rows.map(r => {
     const map = {}; r.ans.forEach(x => { map[x.label] = x.value; });
-    return [r.created_at, ...labels.map(l => map[l] || '')];
+    return [fmtFechaCL(r.created_at), ...labels.map(l => map[l] || '')];
   });
-  const esc  = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const csv  = '﻿' + [header, ...data].map(r => r.map(esc).join(';')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url;
-  a.download = `postulaciones-eiri-${new Date().toISOString().slice(0, 10)}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+
+  const filename = `postulaciones-eiri-${new Date().toISOString().slice(0, 10)}`;
+
+  // Exportar como Excel (.xlsx) si SheetJS está disponible
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+    // Auto-ajustar ancho de columnas
+    ws['!cols'] = header.map((h, i) => {
+      const maxLen = Math.max(h.length, ...data.map(r => String(r[i] || '').length));
+      return { wch: Math.min(Math.max(maxLen + 2, 12), 50) };
+    });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Postulaciones');
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+  } else {
+    // Fallback a CSV si SheetJS no cargó
+    const esc  = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const csv  = '\uFEFF' + [header, ...data].map(r => r.map(esc).join(';')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 document.getElementById('exportApplicationsBtn')?.addEventListener('click', exportApplications);

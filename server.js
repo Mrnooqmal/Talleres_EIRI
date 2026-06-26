@@ -10,6 +10,7 @@ const multer           = require('multer')
 const path             = require('path')
 const fs               = require('fs')
 const crypto           = require('crypto')
+const sharp            = require('sharp')
 
 const app = express()
 const db  = require('./lib/db')
@@ -21,6 +22,7 @@ const S3_BUCKET     = process.env.S3_BUCKET || ''
 const S3_REGION     = process.env.AWS_REGION || 'sa-east-1'
 const S3_PUBLIC_URL = (process.env.S3_PUBLIC_URL || '').replace(/\/$/, '')
 const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf|ino|c|cpp|h|hpp|py|js|ts|json|txt|md|csv)$/i
+const IMAGE_RE      = /\.(png|jpg|jpeg|gif|webp)$/i  // formatos que Sharp puede optimizar (no SVG)
 
 const uploadsDir = path.join(__dirname, 'static', 'uploads')
 // Solo se usa disco local cuando NO hay S3 (en produccion las subidas van a S3)
@@ -28,7 +30,16 @@ if (!S3_BUCKET && !fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursi
 
 const fileFilter = (_, file, cb) => cb(null, ALLOWED_FILES.test(file.originalname))
 const uploadLimits = { fileSize: 70 * 1024 * 1024 }
-const newKey = (file) => `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${path.extname(file.originalname).toLowerCase()}`
+const newKey = (file, extOverride) => `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${extOverride || path.extname(file.originalname).toLowerCase()}`
+
+// Optimiza imágenes: redimensiona a max 1920px de ancho y convierte a WebP calidad 82.
+// Reduce fotos de cámara de ~5MB a ~200KB sin pérdida perceptible.
+async function optimizeImage(buffer) {
+  return sharp(buffer)
+    .resize({ width: 1920, withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toBuffer()
+}
 
 let s3Client = null
 let upload
@@ -48,14 +59,14 @@ if (S3_BUCKET) {
 }
 
 // Sube el buffer a S3 y devuelve la URL publica (CloudFront si esta definido)
-async function putToS3(file) {
+async function putToS3(buffer, file, contentType, extOverride) {
   const { PutObjectCommand } = require('@aws-sdk/client-s3')
-  const key = `uploads/${newKey(file)}`
+  const key = `uploads/${newKey(file, extOverride)}`
   await s3Client.send(new PutObjectCommand({
     Bucket:      S3_BUCKET,
     Key:         key,
-    Body:        file.buffer,
-    ContentType: file.mimetype,
+    Body:        buffer,
+    ContentType: contentType || file.mimetype,
     CacheControl: 'public, max-age=31536000, immutable',
   }))
   return S3_PUBLIC_URL
@@ -408,7 +419,7 @@ app.get('/', async (req, res) => res.render('index.html', { config: await getCon
 app.get('/galeria', async (req, res) => res.render('galeria.html', { config: await getConfig() }))
 app.get('/eiri', async (req, res) => {
   const config = await getConfig()
-  res.render('eiri.html', { config, questions: await clubFormQuestions() })
+  res.render('eiri.html', { config })
 })
 app.get('/postular', async (req, res) => {
   const config = await getConfig()
@@ -481,11 +492,38 @@ app.get(['/admin', '/admin/*'], async (req, res) => {
 app.post('/api/admin/upload', requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Sin archivo o tipo no permitido' })
   try {
-    const url = S3_BUCKET
-      ? await putToS3(req.file)
-      : `/static/uploads/${req.file.filename}`
-    await log(req, 'upload_file', req.file.originalname)
-    res.json({ url, name: req.file.originalname })
+    const isImage = IMAGE_RE.test(req.file.originalname)
+    let url, finalSize
+
+    if (S3_BUCKET) {
+      if (isImage) {
+        // Optimizar: redimensionar + convertir a WebP antes de subir a S3
+        const optimized = await optimizeImage(req.file.buffer)
+        finalSize = optimized.length
+        url = await putToS3(optimized, req.file, 'image/webp', '.webp')
+      } else {
+        finalSize = req.file.buffer.length
+        url = await putToS3(req.file.buffer, req.file)
+      }
+    } else {
+      // Disco local: si es imagen, sobreescribir el archivo con la versión optimizada
+      if (isImage) {
+        const localPath = path.join(uploadsDir, req.file.filename)
+        const optimized = await optimizeImage(fs.readFileSync(localPath))
+        const webpName  = req.file.filename.replace(/\.[^.]+$/, '.webp')
+        fs.writeFileSync(path.join(uploadsDir, webpName), optimized)
+        if (webpName !== req.file.filename) fs.unlinkSync(localPath)  // borrar original
+        finalSize = optimized.length
+        url = `/static/uploads/${webpName}`
+      } else {
+        finalSize = req.file.size
+        url = `/static/uploads/${req.file.filename}`
+      }
+    }
+
+    const sizeKB = Math.round(finalSize / 1024)
+    await log(req, 'upload_file', `${req.file.originalname} → ${sizeKB}KB${isImage ? ' (WebP)' : ''}`)
+    res.json({ url, name: req.file.originalname, size: finalSize, optimized: isImage })
   } catch (err) {
     console.error('Upload error:', err)
     res.status(500).json({ error: 'No se pudo subir el archivo' })
