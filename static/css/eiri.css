@@ -53,9 +53,9 @@
 }
 .club-hero-tagline {
   font-family: var(--f-display); font-weight: 500; font-size: clamp(1.05rem, 2.4vw, 1.6rem);
-  color: var(--text); max-width: 36ch; margin-bottom: 1.8rem; line-height: 1.35; text-align: center;
+  color: var(--text); max-width: 36ch; margin-bottom: 1.8rem; line-height: 1.35; text-align: left;
 }
-.club-hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+.club-hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-start; }
 
 .club-hero-pagination { position: absolute; z-index: 4; bottom: 2rem; left: 0; right: 0; display: flex; justify-content: center; gap: 0.5rem; }
 .club-hero-pagination .swiper-pagination-bullet { width: 26px; height: 3px; border-radius: 2px; background: rgba(220,232,248,0.35); opacity: 1; transition: background 0.3s; }
@@ -174,14 +174,36 @@
 
 /* ═══════════ Formulario estilo Google Forms (cada pregunta en bloque) ═══════════ */
 .forms-style { display: flex; flex-direction: column; gap: 1.1rem; }
-.forms-style .field-group { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.3rem; transition: border-color 0.2s; display: flex; flex-direction: column; gap: 0.65rem; }
-.forms-style .field-group:focus-within { border-color: var(--border-md); }
-.forms-style label { font-family: var(--f-display); font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0; display: block; }
+.forms-style .field-group {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 1.4rem 1.4rem; transition: border-color 0.2s;
+  display: flex; flex-direction: column; gap: 0.7rem;
+}
+.forms-style .field-group:focus-within { border-color: var(--blue-400); }
+.forms-style label {
+  font-family: var(--f-display); font-size: 1rem; font-weight: 600;
+  color: #fff; margin: 0; display: block;
+}
 .forms-style input[type="text"],
 .forms-style input[type="email"],
 .forms-style textarea,
-.forms-style select { width: 100%; box-sizing: border-box; }
-.forms-style .club-apply-actions { margin-top: 0.3rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.forms-style select {
+  width: 100%; box-sizing: border-box;
+  background: var(--bg-0); border: 1px solid var(--border-md); border-radius: 8px;
+  padding: 0.7rem 0.9rem; color: var(--text); font-family: var(--f-body); font-size: 0.95rem;
+  outline: none; transition: border-color 0.2s; resize: vertical;
+}
+.forms-style input[type="text"]:focus,
+.forms-style input[type="email"]:focus,
+.forms-style textarea:focus,
+.forms-style select:focus { border-color: var(--blue-400); box-shadow: 0 0 0 3px rgba(33,150,243,0.12); }
+.forms-style input::placeholder,
+.forms-style textarea::placeholder { color: var(--text-dim); }
+.forms-style select { appearance: auto; cursor: pointer; }
+.forms-style .club-apply-actions {
+  margin-top: 0.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.forms-style .club-apply-actions .btn { padding: 0.8rem 2rem; font-size: 1rem; }
 
 /* ═══════════ Tom Select — tema oscuro cockpit ═══════════ */
 .ts-wrapper { width: 100%; }
