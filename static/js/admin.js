@@ -77,24 +77,23 @@ function uploadFileWithProgress(file, statusEl) {
 }
 
 // Cola de uploads pendientes: permite que el save espere si hay subidas en curso.
-let _pendingUploads = [];
+// Almacena la promesa completa de backgroundUpload (que incluye asignar el valor al campo).
+let _pendingBgUploads = [];
 
 // Sube uno o más archivos en background sin bloquear la UI.
 // Retorna inmediatamente. La URL se coloca en `targetEl` al completar.
-async function backgroundUpload(files, targetEl, statusEl, multiLine = false) {
-  const uploads = Array.from(files).map(f => {
-    const p = uploadFileWithProgress(f, statusEl).then(data => data.url);
-    _pendingUploads.push(p);
-    p.finally(() => { _pendingUploads = _pendingUploads.filter(x => x !== p); });
-    return p;
-  });
+function backgroundUpload(files, targetEl, statusEl, multiLine = false) {
+  const job = (async () => {
+    const uploads = Array.from(files).map(f =>
+      uploadFileWithProgress(f, statusEl).then(data => data.url)
+    );
 
-  if (files.length > 1 && statusEl) {
-    statusEl.textContent = `📤 Subiendo ${files.length} archivos...`;
-  }
+    if (files.length > 1 && statusEl) {
+      statusEl.textContent = `📤 Subiendo ${files.length} archivos...`;
+    }
 
-  try {
     const urls = await Promise.all(uploads);
+    // Asignar las URLs al campo de destino ANTES de que el save handler lea el valor
     if (multiLine) {
       targetEl.value = urls.join('\n');
     } else {
@@ -103,14 +102,18 @@ async function backgroundUpload(files, targetEl, statusEl, multiLine = false) {
     if (statusEl && files.length > 1) {
       statusEl.textContent = `✓ ${files.length} archivos subidos`;
     }
-  } catch (e) {
+  })().catch(e => {
     if (statusEl) statusEl.textContent = `✗ ${e.message}`;
-  }
+  });
+
+  _pendingBgUploads.push(job);
+  job.finally(() => { _pendingBgUploads = _pendingBgUploads.filter(x => x !== job); });
 }
 
 // Espera a que terminen todas las subidas pendientes (llamar antes de guardar).
+// Cuando resuelve, los campos de URL ya tienen el valor asignado.
 function waitForPendingUploads() {
-  return _pendingUploads.length ? Promise.all(_pendingUploads) : Promise.resolve();
+  return _pendingBgUploads.length ? Promise.all(_pendingBgUploads) : Promise.resolve();
 }
 
 // Modal
@@ -145,7 +148,7 @@ modalCancel.addEventListener('click', closeModal);
 modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeModal(); });
 modalSave.addEventListener('click', async () => {
   if (!modalSaveHandler) return;
-  if (_pendingUploads.length) {
+  if (_pendingBgUploads.length) {
     modalSave.textContent = 'Esperando subida...';
     modalSave.disabled = true;
     try { await waitForPendingUploads(); } catch {}
