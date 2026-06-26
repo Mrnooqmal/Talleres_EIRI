@@ -37,15 +37,16 @@
 .club-hero-overlay {
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
-    linear-gradient(to top, rgba(4,8,15,0.94) 2%, rgba(4,8,15,0.18) 48%, rgba(4,8,15,0.55) 100%);
+    linear-gradient(to top, rgba(4,8,15,0.94) 2%, rgba(4,8,15,0.18) 48%, rgba(4,8,15,0.55) 100%),
+    linear-gradient(to right, rgba(4,8,15,0.78), transparent 58%);
 }
 
 .club-hero-content {
   position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; top: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end;
+  padding: 0 clamp(1.5rem, 5vw, 4rem) clamp(3.5rem, 7vh, 5.5rem);
 }
-.club-hero-content .club-wordmark { margin: 0 0 0.5rem; text-align: center; }
+.club-hero-content .club-wordmark { margin: 0 0 0.5rem; text-align: left; }
 .club-wordmark {
   font-family: var(--f-tech); font-weight: 900; font-size: clamp(3.2rem, 11vw, 7rem);
   line-height: 0.98; letter-spacing: 0.02em; color: #fff;
@@ -173,10 +174,14 @@
 
 /* ═══════════ Formulario estilo Google Forms (cada pregunta en bloque) ═══════════ */
 .forms-style { display: flex; flex-direction: column; gap: 1.1rem; }
-.forms-style .field-group { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.3rem; transition: border-color 0.2s; }
+.forms-style .field-group { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 1.2rem 1.3rem; transition: border-color 0.2s; display: flex; flex-direction: column; gap: 0.65rem; }
 .forms-style .field-group:focus-within { border-color: var(--border-md); }
-.forms-style label { font-family: var(--f-display); font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0.75rem; }
-.forms-style .club-apply-actions { margin-top: 0.3rem; }
+.forms-style label { font-family: var(--f-display); font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 0; display: block; }
+.forms-style input[type="text"],
+.forms-style input[type="email"],
+.forms-style textarea,
+.forms-style select { width: 100%; box-sizing: border-box; }
+.forms-style .club-apply-actions { margin-top: 0.3rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
 /* ═══════════ Tom Select — tema oscuro cockpit ═══════════ */
 .ts-wrapper { width: 100%; }
