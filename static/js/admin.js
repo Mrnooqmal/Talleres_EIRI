@@ -1122,6 +1122,9 @@ async function loadClubAdmin() {
       const el = document.getElementById(`cfg-${k}`);
       if (el) el.value = cfg[k] || '';
     });
+    // Cargar estado del toggle QR
+    const qrChk = document.getElementById('qrToggleChk');
+    if (qrChk) qrChk.checked = cfg.show_qr === '1';
   } catch {}
   loadClubBanner();
   loadClubProjects();
@@ -1130,6 +1133,21 @@ async function loadClubAdmin() {
 document.getElementById('saveClubTextBtn')?.addEventListener('click', () =>
   saveCfgFields(CLUB_TEXT_KEYS, 'clubTextFeedback')
 );
+
+document.getElementById('saveQrBtn')?.addEventListener('click', async () => {
+  const fb  = document.getElementById('qrFeedback');
+  const chk = document.getElementById('qrToggleChk');
+  if (!fb || !chk) return;
+  try {
+    await api('PUT', '/api/admin/config', { show_qr: chk.checked ? '1' : '0' });
+    fb.textContent = chk.checked ? 'QR activado ✓' : 'QR desactivado ✓';
+    fb.className   = 'cfg-feedback ok';
+    setTimeout(() => fb.textContent = '', 2500);
+  } catch (e) {
+    fb.textContent = e.message;
+    fb.className   = 'cfg-feedback err';
+  }
+});
 
 async function loadClubProjects() {
   const container = document.getElementById('clubProjectsList');

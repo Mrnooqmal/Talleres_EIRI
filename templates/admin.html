@@ -412,6 +412,28 @@
                 </div>
             </div>
 
+            <!-- QR Postulación -->
+            <div class="config-card" id="qrCard">
+                <div class="config-card-head">
+                    <i data-lucide="qr-code"></i>
+                    <h3>QR de Postulación</h3>
+                </div>
+                <p style="font-size:.88rem;color:var(--text-dim);margin-bottom:1.2rem">Muestra el QR en el banner principal de <strong>/eiri</strong> para que los asistentes puedan escanear y postular durante presentaciones.</p>
+                <div class="field-group" style="flex-direction:row;align-items:center;justify-content:space-between;gap:1rem">
+                    <label style="margin:0;font-size:1rem">Mostrar QR en el hero</label>
+                    <label class="qr-toggle" id="qrToggleLabel">
+                        <input type="checkbox" id="qrToggleChk">
+                        <span class="qr-slider"></span>
+                    </label>
+                </div>
+                <div class="config-card-foot">
+                    <button class="btn-primary" id="saveQrBtn">
+                        <i data-lucide="save"></i> Guardar
+                    </button>
+                    <p class="cfg-feedback" id="qrFeedback"></p>
+                </div>
+            </div>
+
             <div class="adm-view-header" style="margin-top:2rem">
                 <div>
                     <h2>Banner</h2>

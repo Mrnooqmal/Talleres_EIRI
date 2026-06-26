@@ -801,3 +801,20 @@ input, textarea, select { font-family: var(--f-body); font-size: 0.9rem; }
 .q-disabled { opacity: 0.5; }
 .q-req { color: #f08a8a; }
 .apps-k { color: var(--text-dim); font-weight: 500; }
+
+/* ─── Toggle switch QR ─── */
+.qr-toggle { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
+.qr-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.qr-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--bg-1); border: 1px solid var(--border-md);
+  border-radius: 28px; transition: background 0.25s, border-color 0.25s;
+}
+.qr-slider::before {
+  content: ''; position: absolute;
+  width: 20px; height: 20px; left: 3px; top: 50%; transform: translateY(-50%);
+  background: var(--text-dim); border-radius: 50%;
+  transition: transform 0.25s, background 0.25s;
+}
+.qr-toggle input:checked + .qr-slider { background: rgba(33,150,243,0.25); border-color: var(--blue-400); }
+.qr-toggle input:checked + .qr-slider::before { transform: translate(24px, -50%); background: var(--blue-400); box-shadow: 0 0 8px rgba(33,150,243,0.5); }

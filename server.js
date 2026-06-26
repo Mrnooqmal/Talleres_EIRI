@@ -292,6 +292,7 @@ async function initDB() {
       'Diseño e Interacción Digital',
     ].join('\n'),
     club_apply_generations: ['2026','2025','2024','2023','2022','2021','2020','Antes de 2020'].join('\n'),
+    show_qr: '0',
   }
   for (const [k, v] of Object.entries(configDefaults)) {
     await db.run('INSERT OR IGNORE INTO site_config (key, value) VALUES (?,?)', k, v)

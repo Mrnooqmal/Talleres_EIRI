@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EIRI — Equipo Interdisciplinario de Robótica e Innovación</title>
+    <title>EIRI - Equipo Interdisciplinario de Robótica e Innovación</title>
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
@@ -17,7 +17,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
     <link rel="stylesheet" href="/static/css/style.css?v=20260625">
-    <link rel="stylesheet" href="/static/css/eiri.css?v=20260626c">
+    <link rel="stylesheet" href="/static/css/eiri.css?v=20260626f">
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
@@ -45,6 +45,15 @@
                 <a href="#proyectos" class="btn btn-ghost-outline">Ver proyectos</a>
             </div>
         </div>
+
+        {% if config.show_qr == '1' %}
+        <div class="hero-qr" id="heroQr">
+            <a href="/postular" class="hero-qr-inner" title="Postula al club">
+                <img src="/static/Postular.png" alt="QR Postular a EIRI" class="hero-qr-img">
+                <span class="hero-qr-label">Escanea para postular</span>
+            </a>
+        </div>
+        {% endif %}
 
         <div class="club-hero-pagination"></div>
         <a href="#sobre" class="club-scroll-cue" aria-label="Bajar"><i data-lucide="chevron-down"></i></a>
