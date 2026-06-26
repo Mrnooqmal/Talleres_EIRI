@@ -1411,6 +1411,12 @@ a.acc-session-title:hover { color: var(--blue-300); }
 .bk-row--lose { opacity: 0.55; }
 .bk-row--lose .bk-name { color: var(--text-dim); }
 
+/* En escritorio el bracket muestra solo el logo; el nombre se revela al pasar el mouse */
+@media (hover: hover) {
+  .bk-name { opacity: 0; transition: opacity 0.18s var(--ease-out); }
+  .bk-card:hover .bk-name { opacity: 1; }
+}
+
 /* ── Conectores ── */
 /* Izquierda: stub a la derecha (hacia el centro) en todos los partidos */
 .bk-side--left .bk-match::after {

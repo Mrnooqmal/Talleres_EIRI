@@ -14,7 +14,7 @@ const crypto           = require('crypto')
 const app = express()
 const db  = require('./lib/db')
 
-nunjucks.configure(path.join(__dirname, 'templates'), { autoescape: true, express: app })
+nunjucks.configure(path.join(__dirname, 'templates'), { autoescape: true, express: app, noCache: process.env.NODE_ENV !== 'production' })
 
 // Almacenamiento de archivos: S3 si esta configurado, disco local en desarrollo
 const S3_BUCKET     = process.env.S3_BUCKET || ''
@@ -27,7 +27,7 @@ const uploadsDir = path.join(__dirname, 'static', 'uploads')
 if (!S3_BUCKET && !fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 
 const fileFilter = (_, file, cb) => cb(null, ALLOWED_FILES.test(file.originalname))
-const uploadLimits = { fileSize: 25 * 1024 * 1024 }
+const uploadLimits = { fileSize: 70 * 1024 * 1024 }
 const newKey = (file) => `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${path.extname(file.originalname).toLowerCase()}`
 
 let s3Client = null
@@ -180,12 +180,49 @@ async function initDB() {
     username   TEXT NOT NULL,
     updated_at TEXT DEFAULT (datetime('now'))
   );
+  CREATE TABLE IF NOT EXISTS club_projects (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title       TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    image_url   TEXT DEFAULT '',
+    order_index INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS club_applications (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    name       TEXT NOT NULL,
+    email      TEXT NOT NULL,
+    career     TEXT DEFAULT '',
+    generation TEXT DEFAULT '',
+    message    TEXT DEFAULT '',
+    answers    TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS club_banner (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    image_url   TEXT NOT NULL,
+    caption     TEXT DEFAULT '',
+    order_index INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS form_questions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    label       TEXT NOT NULL,
+    type        TEXT NOT NULL DEFAULT 'short_text',
+    options     TEXT DEFAULT '',
+    required    INTEGER DEFAULT 0,
+    allow_other INTEGER DEFAULT 0,
+    order_index INTEGER DEFAULT 0,
+    enabled     INTEGER DEFAULT 1
+  );
   `)
 
   // Migrations
   try { await db.run("ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT ''") } catch {}
   try { await db.run("ALTER TABLE admin_users ADD COLUMN is_super INTEGER DEFAULT 0") } catch {}
   try { await db.run("ALTER TABLE teams ADD COLUMN logo TEXT DEFAULT ''") } catch {}
+  try { await db.run("ALTER TABLE club_applications ADD COLUMN generation TEXT DEFAULT ''") } catch {}
+  try { await db.run("ALTER TABLE club_applications ADD COLUMN answers TEXT DEFAULT ''") } catch {}
 
   // Seed admin user
   const hasUsers = await db.get('SELECT 1 FROM admin_users LIMIT 1')
@@ -228,9 +265,42 @@ async function initDB() {
     // Estructura del bracket de eliminación simple. Se regenera al cambiar el tamaño.
     // { size, rounds: [ [ {a,b,scoreA,scoreB,winner}, ... ], ... ] }
     bracket_data: JSON.stringify({ size: 8, rounds: emptyBracketRounds(8) }),
+    club_acronym: 'Equipo Interdisciplinario de Robótica e Innovación',
+    club_tagline: 'Donde la ingeniería, el diseño y el código se encuentran.',
+    club_intro: 'EIRI reúne a estudiantes de distintas disciplinas para construir, programar e innovar en robótica. Creemos en aprender haciendo: del esquemático al código, de la impresión 3D a la arena de combate.',
+    club_history: 'EIRI nació del entusiasmo de un grupo de estudiantes de la Universidad del Desarrollo por llevar la robótica más allá del aula. Lo que empezó como sesiones informales se convirtió en un equipo interdisciplinario que hoy organiza talleres, competencias y proyectos abiertos a toda la facultad.',
+    club_apply_careers: [
+      'Ingeniería Civil en Informática e Innovación Tecnológica',
+      'Ingeniería Civil en Informática e Inteligencia Artificial',
+      'Ingeniería Civil Industrial',
+      'Ingeniería Civil en Obras Civiles',
+      'Ingeniería Civil en Geología',
+      'Ingeniería Civil en Minería',
+      'Ingeniería Civil Plan Común',
+      'Ingeniería Civil Biomédica',
+      'Diseño e Interacción Digital',
+    ].join('\n'),
+    club_apply_generations: ['2026','2025','2024','2023','2022','2021','2020','Antes de 2020'].join('\n'),
   }
   for (const [k, v] of Object.entries(configDefaults)) {
     await db.run('INSERT OR IGNORE INTO site_config (key, value) VALUES (?,?)', k, v)
+  }
+
+  // Seed del formulario de postulación (refleja el formulario actual como punto de partida)
+  const hasQuestions = await db.get('SELECT 1 FROM form_questions LIMIT 1')
+  if (!hasQuestions) {
+    const cfg = await getConfig()
+    const seed = [
+      ['Nombre', 'short_text', '', 1, 0],
+      ['Correo', 'email', '', 1, 0],
+      ['Carrera', 'dropdown', cfg.club_apply_careers || '', 1, 1],
+      ['Generación de ingreso', 'dropdown', cfg.club_apply_generations || '', 0, 0],
+      ['¿Por qué quieres unirte?', 'paragraph', '', 0, 0],
+    ]
+    for (let i = 0; i < seed.length; i++) {
+      const [label, type, options, required, allow_other] = seed[i]
+      await db.run('INSERT INTO form_questions (label,type,options,required,allow_other,order_index) VALUES (?,?,?,?,?,?)', label, type, options, required, allow_other, i)
+    }
   }
 
   // Seed sessions
@@ -246,6 +316,14 @@ async function initDB() {
 async function getConfig() {
   const rows = await db.all('SELECT key, value FROM site_config')
   return Object.fromEntries(rows.map(r => [r.key, r.value]))
+}
+
+async function clubFormQuestions(all = false) {
+  const sql = all
+    ? 'SELECT * FROM form_questions ORDER BY order_index, id'
+    : 'SELECT * FROM form_questions WHERE enabled=1 ORDER BY order_index, id'
+  const rows = await db.all(sql)
+  return rows.map(q => ({ ...q, options_list: (q.options || '').split('\n').map(s => s.trim()).filter(Boolean) }))
 }
 
 async function log(req, event, detail = '') {
@@ -328,6 +406,15 @@ function sanitizeBracket(raw) {
 
 app.get('/', async (req, res) => res.render('index.html', { config: await getConfig() }))
 app.get('/galeria', async (req, res) => res.render('galeria.html', { config: await getConfig() }))
+app.get('/eiri', async (req, res) => {
+  const config = await getConfig()
+  res.render('eiri.html', { config, questions: await clubFormQuestions() })
+})
+app.get('/postular', async (req, res) => {
+  const config = await getConfig()
+  const banner = await db.all('SELECT image_url FROM club_banner ORDER BY order_index, id LIMIT 1')
+  res.render('postular.html', { config, questions: await clubFormQuestions(), heroImage: banner[0]?.image_url || '' })
+})
 
 // Serializa a JSON seguro para incrustar dentro de un bloque <script>.
 // Sin esto, un asset que contenga "</script>", "<!--" o separadores unicode
@@ -748,6 +835,171 @@ app.put('/api/admin/bracket', requireAdmin, async (req, res) => {
   res.json({ ok: true })
 })
 
+// ─── Club EIRI ────────────────────────────────────────
+
+app.get('/api/club/projects', async (req, res) => {
+  res.json(await db.all('SELECT * FROM club_projects ORDER BY order_index, id'))
+})
+
+app.get('/api/club/form', async (req, res) => {
+  res.json(await clubFormQuestions())
+})
+
+app.post('/api/club/apply', async (req, res) => {
+  const questions = await clubFormQuestions()
+  const input = req.body.answers || {}
+  const snapshot = []
+  let name = '', email = ''
+  for (const q of questions) {
+    let v = input[q.id] ?? input[String(q.id)] ?? ''
+    if (Array.isArray(v)) v = v.filter(Boolean).join(', ')
+    v = String(v).trim().slice(0, 2000)
+    if (q.required && !v) return res.status(400).json({ error: `Falta completar: ${q.label}` })
+    if (q.type === 'email' && v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return res.status(400).json({ error: 'Correo no válido' })
+    snapshot.push({ qid: q.id, label: q.label, type: q.type, value: v })
+    if (!email && q.type === 'email') email = v
+    if (!name && q.type === 'short_text') name = v
+  }
+  if (!questions.length) return res.status(400).json({ error: 'El formulario no tiene preguntas' })
+  if (!name) name = snapshot.find(s => s.value)?.value || 'Sin nombre'
+  const career     = snapshot.find(s => s.label.toLowerCase().includes('carrera'))?.value || ''
+  const generation = snapshot.find(s => s.label.toLowerCase().includes('generaci'))?.value || ''
+  const message    = snapshot.find(s => s.type === 'paragraph')?.value || ''
+  const r = await db.run(
+    'INSERT INTO club_applications (name, email, career, generation, message, answers) VALUES (?,?,?,?,?,?)',
+    name.slice(0, 120), email.slice(0, 160), career.slice(0, 200), generation.slice(0, 60), message, JSON.stringify(snapshot)
+  )
+  await log(req, 'club_apply', name)
+  res.status(201).json({ id: r.lastInsertRowid })
+})
+
+app.get('/api/club/banner', async (req, res) => {
+  res.json(await db.all('SELECT * FROM club_banner ORDER BY order_index, id'))
+})
+
+app.get('/api/admin/club/banner', requireAdmin, async (req, res) => {
+  res.json(await db.all('SELECT * FROM club_banner ORDER BY order_index, id'))
+})
+
+app.post('/api/admin/club/banner', requireAdmin, async (req, res) => {
+  const { image_url, caption = '', order_index = 0 } = req.body
+  if (!image_url) return res.status(400).json({ error: 'Imagen requerida' })
+  const r = await db.run('INSERT INTO club_banner (image_url,caption,order_index) VALUES (?,?,?)', image_url, caption, order_index)
+  await log(req, 'create_club_banner', r.lastInsertRowid)
+  res.status(201).json({ id: r.lastInsertRowid })
+})
+
+app.put('/api/admin/club/banner/:id', requireAdmin, async (req, res) => {
+  const { image_url, caption = '', order_index = 0 } = req.body
+  await db.run('UPDATE club_banner SET image_url=?,caption=?,order_index=? WHERE id=?', image_url, caption, order_index, req.params.id)
+  await log(req, 'update_club_banner', req.params.id)
+  res.json({ ok: true })
+})
+
+app.patch('/api/admin/club/banner/reorder', requireAdmin, async (req, res) => {
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE club_banner SET order_index=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.delete('/api/admin/club/banner/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM club_banner WHERE id=?', req.params.id)
+  await log(req, 'delete_club_banner', req.params.id)
+  res.json({ ok: true })
+})
+
+// ─── Constructor del formulario de postulación ───────
+app.get('/api/admin/form/questions', requireAdmin, async (req, res) => {
+  res.json(await db.all('SELECT * FROM form_questions ORDER BY order_index, id'))
+})
+
+app.post('/api/admin/form/questions', requireAdmin, async (req, res) => {
+  const { label, type = 'short_text', options = '', required = 0, allow_other = 0, enabled = 1 } = req.body
+  if (!label) return res.status(400).json({ error: 'La pregunta requiere una etiqueta' })
+  const max = (await db.get('SELECT MAX(order_index) m FROM form_questions'))?.m
+  const order_index = (max == null ? -1 : max) + 1
+  const r = await db.run('INSERT INTO form_questions (label,type,options,required,allow_other,order_index,enabled) VALUES (?,?,?,?,?,?,?)',
+    label, type, options, required ? 1 : 0, allow_other ? 1 : 0, order_index, enabled ? 1 : 0)
+  await log(req, 'create_question', `${r.lastInsertRowid}:${label}`)
+  res.status(201).json({ id: r.lastInsertRowid })
+})
+
+app.put('/api/admin/form/questions/:id', requireAdmin, async (req, res) => {
+  const { label, type = 'short_text', options = '', required = 0, allow_other = 0, order_index = 0, enabled = 1 } = req.body
+  await db.run('UPDATE form_questions SET label=?,type=?,options=?,required=?,allow_other=?,order_index=?,enabled=? WHERE id=?',
+    label, type, options, required ? 1 : 0, allow_other ? 1 : 0, order_index, enabled ? 1 : 0, req.params.id)
+  await log(req, 'update_question', req.params.id)
+  res.json({ ok: true })
+})
+
+app.patch('/api/admin/form/questions/reorder', requireAdmin, async (req, res) => {
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE form_questions SET order_index=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.delete('/api/admin/form/questions/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM form_questions WHERE id=?', req.params.id)
+  await log(req, 'delete_question', req.params.id)
+  res.json({ ok: true })
+})
+
+app.get('/api/admin/club/projects', requireAdmin, async (req, res) => {
+  res.json(await db.all('SELECT * FROM club_projects ORDER BY order_index, id'))
+})
+
+app.post('/api/admin/club/projects', requireAdmin, async (req, res) => {
+  const { title, description = '', image_url = '', order_index = 0 } = req.body
+  if (!title) return res.status(400).json({ error: 'Título requerido' })
+  const r = await db.run('INSERT INTO club_projects (title,description,image_url,order_index) VALUES (?,?,?,?)', title, description, image_url, order_index)
+  await log(req, 'create_club_project', `${r.lastInsertRowid}:${title}`)
+  res.status(201).json({ id: r.lastInsertRowid })
+})
+
+app.put('/api/admin/club/projects/:id', requireAdmin, async (req, res) => {
+  const { title, description = '', image_url = '', order_index = 0 } = req.body
+  await db.run('UPDATE club_projects SET title=?,description=?,image_url=?,order_index=? WHERE id=?', title, description, image_url, order_index, req.params.id)
+  await log(req, 'update_club_project', req.params.id)
+  res.json({ ok: true })
+})
+
+app.patch('/api/admin/club/projects/reorder', requireAdmin, async (req, res) => {
+  try {
+    for (const { id, display_order } of (req.body || [])) {
+      await db.run('UPDATE club_projects SET order_index=? WHERE id=?', display_order, id)
+    }
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.delete('/api/admin/club/projects/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM club_projects WHERE id=?', req.params.id)
+  await log(req, 'delete_club_project', req.params.id)
+  res.json({ ok: true })
+})
+
+app.get('/api/admin/club/applications', requireAdmin, async (req, res) => {
+  res.json(await db.all('SELECT * FROM club_applications ORDER BY created_at DESC, id DESC'))
+})
+
+app.delete('/api/admin/club/applications/:id', requireAdmin, async (req, res) => {
+  await db.run('DELETE FROM club_applications WHERE id=?', req.params.id)
+  await log(req, 'delete_club_application', req.params.id)
+  res.json({ ok: true })
+})
+
 // ─── Feedback ─────────────────────────────────────────
 
 app.post('/api/feedback', async (req, res) => {
@@ -857,6 +1109,22 @@ app.delete('/api/admin/rankings/:id', requireAdmin, async (req, res) => {
 app.get('/api/admin/logs', requireAdmin, async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 200, 500)
   res.json(await db.all('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT ?', limit))
+})
+
+// ─── Errores ─────────────────────────────────────────
+// Rutas /api desconocidas → JSON (no la SPA ni HTML)
+app.use('/api', (req, res) => res.status(404).json({ error: 'Recurso no encontrado' }))
+
+// Handler global: las rutas /api SIEMPRE responden JSON (evita el "<!DOCTYPE..." en el cliente)
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err)
+  console.error('Error:', err.message)
+  if ((req.path || '').startsWith('/api')) {
+    const tooBig = err.code === 'LIMIT_FILE_SIZE'
+    return res.status(tooBig ? 413 : (err.status || 500))
+      .json({ error: tooBig ? 'La imagen supera el máximo de 70MB' : 'Error del servidor' })
+  }
+  res.status(500).send('Error interno del servidor')
 })
 
 // ─── Start ───────────────────────────────────────────

@@ -1,0 +1,34 @@
+{# Formulario de postulación, renderizado desde el esquema editable. Requiere `questions`. #}
+<form class="club-apply-form" id="applyForm" novalidate>
+    {% for q in questions %}
+    <div class="field-group">
+        <label for="q-{{ q.id }}">{{ q.label }}{% if q.required %} <span class="field-req">*</span>{% endif %}</label>
+        {% if q.type == 'paragraph' %}
+        <textarea id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="paragraph" rows="4" maxlength="2000"
+            placeholder="Tu respuesta..."></textarea>
+        {% elif q.type == 'dropdown' %}
+        <select id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="dropdown" data-other="{{ '1' if q.allow_other else '0' }}"
+            placeholder="Selecciona{% if q.allow_other %} o busca{% endif %}">
+            <option value=""></option>
+            {% for o in q.options_list %}<option value="{{ o }}">{{ o }}</option>{% endfor %}
+            {% if q.allow_other %}<option value="__otro__">Otro</option>{% endif %}
+        </select>
+        {% if q.allow_other %}<input type="text" class="q-other" id="q-{{ q.id }}-other" maxlength="160" placeholder="¿Cuál? Escríbelo aquí" hidden>{% endif %}
+        {% elif q.type == 'checkboxes' %}
+        <div class="q-checks" id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="checkboxes">
+            {% for o in q.options_list %}<label class="q-check"><input type="checkbox" value="{{ o }}"><span>{{ o }}</span></label>{% endfor %}
+        </div>
+        {% elif q.type == 'email' %}
+        <input type="email" id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="email" maxlength="200" autocomplete="email" placeholder="tucorreo@udd.cl">
+        {% else %}
+        <input type="text" id="q-{{ q.id }}" data-qid="{{ q.id }}" data-type="short_text" maxlength="200" placeholder="Tu respuesta...">
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="club-apply-actions">
+        <span class="club-apply-status" id="applyStatus"></span>
+        <button type="submit" class="btn btn-primary" id="applySubmit">
+            Enviar postulación <i data-lucide="send"></i>
+        </button>
+    </div>
+</form>

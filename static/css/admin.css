@@ -773,3 +773,31 @@ input, textarea, select { font-family: var(--f-body); font-size: 0.9rem; }
   flex-shrink: 0;
 }
 
+
+/* ─── Postulaciones: acciones, toggle de vista y tabla ─── */
+.apps-actions { display: flex; align-items: center; gap: 0.6rem; }
+.view-toggle { display: inline-flex; background: var(--bg-1); border: 1px solid var(--border-md); border-radius: 8px; overflow: hidden; }
+.view-toggle button { display: grid; place-items: center; width: 34px; height: 32px; background: transparent; border: none; color: var(--text-dim); cursor: pointer; transition: background 0.15s, color 0.15s; }
+.view-toggle button + button { border-left: 1px solid var(--border-md); }
+.view-toggle button:hover { color: var(--text); }
+.view-toggle button.active { background: rgba(33,150,243,0.15); color: var(--blue-lit); }
+.view-toggle svg { width: 16px; height: 16px; }
+
+.apps-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.apps-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.apps-table thead th { text-align: left; padding: 0.7rem 0.9rem; background: var(--bg-1); color: var(--text-dim); font-family: var(--f-mono, monospace); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border-md); white-space: nowrap; }
+.apps-table tbody td { padding: 0.7rem 0.9rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.apps-table tbody tr:last-child td { border-bottom: none; }
+.apps-table tbody tr:hover { background: rgba(33,150,243,0.05); }
+.apps-table a { color: var(--blue-lit); }
+.apps-date { color: var(--text-dim); font-family: var(--f-mono, monospace); font-size: 0.76rem; white-space: nowrap; }
+.apps-gen { font-family: var(--f-mono, monospace); color: var(--text-dim); text-align: center; }
+.apps-msg { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.apps-empty { color: var(--text-dim); opacity: 0.5; }
+
+/* ─── Constructor de formulario ─── */
+.q-check { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--text); cursor: pointer; }
+.q-check input { width: 15px; height: 15px; accent-color: #2196f3; }
+.q-disabled { opacity: 0.5; }
+.q-req { color: #f08a8a; }
+.apps-k { color: var(--text-dim); font-weight: 500; }

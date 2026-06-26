@@ -13,11 +13,19 @@
 
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
-            <a href="{{ p }}#home" class="nav-brand">
+            <a href="{{ '#top' if showcase else p + '#home' }}" class="nav-brand">
                 <span class="nav-eiri">EIRI</span>
-                <span class="nav-sub">Talleres de Robótica</span>
+                <span class="nav-sub">{{ 'Robótica e Innovación' if showcase else 'Talleres de Robótica' }}</span>
             </a>
 
+            {% if showcase %}
+            <ul class="nav-links">
+                <li><a href="#top">Inicio</a></li>
+                <li><a href="#sobre">El club</a></li>
+                <li><a href="#proyectos">Proyectos</a></li>
+                <li><a href="#postular">Postular</a></li>
+            </ul>
+            {% else %}
             <ul class="nav-links">
                 <li><a href="{{ p }}#home">Inicio</a></li>
                 <li><a href="{{ p }}#sesiones">Sesiones</a></li>
@@ -26,12 +34,21 @@
                 <li><a href="{{ p }}#bracket">Torneo</a></li>
                 <li><a href="/galeria">Galería</a></li>
             </ul>
+            {% endif %}
 
             <button class="nav-burger" id="navBurger" aria-label="Menú">
                 <span></span><span></span><span></span>
             </button>
         </div>
 
+        {% if showcase %}
+        <div class="nav-mobile" id="navMobile">
+            <a href="#top" class="nav-m-link">Inicio</a>
+            <a href="#sobre" class="nav-m-link">El club</a>
+            <a href="#proyectos" class="nav-m-link">Proyectos</a>
+            <a href="#postular" class="nav-m-link">Postular</a>
+        </div>
+        {% else %}
         <div class="nav-mobile" id="navMobile">
             <a href="{{ p }}#home" class="nav-m-link">Inicio</a>
             <a href="{{ p }}#sesiones" class="nav-m-link">Sesiones</a>
@@ -40,5 +57,6 @@
             <a href="{{ p }}#bracket" class="nav-m-link">Torneo</a>
             <a href="/galeria" class="nav-m-link">Galería</a>
         </div>
+        {% endif %}
     </nav>
 </header>

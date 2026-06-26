@@ -12,6 +12,7 @@
 
             <p class="footer-tagline">Con mucho amor, de parte del Equipo Interdisciplinario de Robótica e Innovación &lt;3</p>
 
+            {% if not showcase %}
             <nav class="footer-nav">
                 <a href="{{ p }}#home">Inicio</a>
                 <a href="{{ p }}#sesiones">Sesiones</a>
@@ -19,6 +20,7 @@
                 <a href="{{ p }}#ranking">Ranking</a>
                 <a href="/galeria">Galería</a>
             </nav>
+            {% endif %}
 
             <div class="footer-socials">
                 {% if config.social_instagram %}
@@ -58,9 +60,11 @@
                 <a href="https://linkedin.com/in/adrean-torres-fonseca/" target="_blank" rel="noopener" class="footer-author">Adrean Torres Fonseca</a>.
                 Junio 2026
             </p>
+            {% if not showcase %}
             <a href="/admin/login" class="footer-admin-link" aria-label="Panel de administración">
                 <i data-lucide="shield"></i>
             </a>
+            {% endif %}
         </div>
     </div>
 </footer>

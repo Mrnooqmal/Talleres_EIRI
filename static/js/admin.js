@@ -98,6 +98,9 @@ document.querySelectorAll('.adm-nav-item[data-view]').forEach(btn => {
     if (btn.dataset.view === 'teams')    loadTeamsAdmin();
     if (btn.dataset.view === 'bracket')  loadBracketAdmin();
     if (btn.dataset.view === 'feedback') loadFeedback();
+    if (btn.dataset.view === 'club')         loadClubAdmin();
+    if (btn.dataset.view === 'applications') loadApplications();
+    if (btn.dataset.view === 'form')         loadFormQuestions();
   });
 });
 
@@ -1062,6 +1065,492 @@ function deleteGalleryItem(id, title) {
   confirm('Eliminar elemento', `¿Eliminar "${title}" de la galería?`, async () => {
     await api('DELETE', `/api/admin/gallery/${id}`);
     loadGalleryAdmin();
+  });
+}
+
+// Club EIRI — textos + proyectos
+const CLUB_TEXT_KEYS = ['club_tagline','club_acronym','club_intro','club_history'];
+
+async function loadClubAdmin() {
+  try {
+    const cfg = await api('GET', '/api/config');
+    CLUB_TEXT_KEYS.forEach(k => {
+      const el = document.getElementById(`cfg-${k}`);
+      if (el) el.value = cfg[k] || '';
+    });
+  } catch {}
+  loadClubBanner();
+  loadClubProjects();
+}
+
+document.getElementById('saveClubTextBtn')?.addEventListener('click', () =>
+  saveCfgFields(CLUB_TEXT_KEYS, 'clubTextFeedback')
+);
+
+async function loadClubProjects() {
+  const container = document.getElementById('clubProjectsList');
+  if (!container) return;
+  try {
+    const items = await api('GET', '/api/admin/club/projects');
+    if (!items.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Aún no hay proyectos.</p>';
+      return;
+    }
+    container.innerHTML = items.map(it => {
+      const preview = it.image_url
+        ? `<img src="${escHtml(it.image_url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">`
+        : `<span class="gal-drag-thumb gal-drag-thumb--video"><i data-lucide="cpu"></i></span>`;
+      return `<div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
+        <span class="drag-handle" title="Arrastrar para reordenar"><i data-lucide="grip-vertical"></i></span>
+        ${preview}
+        <div class="gal-drag-info">
+          <strong>${escHtml(it.title)}</strong>
+          ${it.description ? `<span class="gal-drag-caption">${escHtml(it.description)}</span>` : ''}
+        </div>
+        <div class="gal-drag-actions">
+          <button class="btn-icon" onclick="editClubProject(${it.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon btn-del" onclick="deleteClubProject(${it.id},'${escHtml(it.title)}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+    lucide.createIcons({ nodes: [container] });
+    initDragDrop(container, '/api/admin/club/projects/reorder');
+  } catch (e) {
+    container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function clubProjectFormHTML(item = {}) {
+  return `
+    <div class="field-group">
+      <label>Título</label>
+      <input type="text" id="f-cp-title" value="${escHtml(item.title || '')}">
+    </div>
+    <div class="field-group">
+      <label>Descripción</label>
+      <textarea id="f-cp-desc" rows="3">${escHtml(item.description || '')}</textarea>
+    </div>
+    <div class="field-group">
+      <label>Imagen <span style="color:var(--text-dim);font-weight:400">(URL o subir archivo)</span></label>
+      <input type="text" id="f-cp-image" value="${escHtml(item.image_url || '')}" placeholder="https://... o sube una imagen">
+      <div style="margin-top:0.4rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn-ghost btn--sm" id="f-cp-upload-btn"><i data-lucide="upload"></i> Subir imagen</button>
+        <input type="file" id="f-cp-file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display:none">
+        <span id="f-cp-upload-status" style="font-size:0.72rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Orden</label>
+      <input type="number" id="f-cp-order" value="${item.order_index ?? 0}" style="max-width:80px">
+    </div>`;
+}
+
+function bindClubUpload() {
+  const btn    = document.getElementById('f-cp-upload-btn');
+  const file   = document.getElementById('f-cp-file');
+  const urlEl  = document.getElementById('f-cp-image');
+  const status = document.getElementById('f-cp-upload-status');
+  if (!btn) return;
+  btn.addEventListener('click', () => file.click());
+  file.addEventListener('change', async () => {
+    if (!file.files.length) return;
+    status.textContent = 'Subiendo...';
+    try {
+      const fd = new FormData();
+      fd.append('file', file.files[0]);
+      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      urlEl.value = data.url;
+      status.textContent = `Subido: ${file.files[0].name}`;
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+    }
+  });
+}
+
+function clubProjectPayload() {
+  return {
+    title:       document.getElementById('f-cp-title').value.trim(),
+    description: document.getElementById('f-cp-desc').value.trim(),
+    image_url:   document.getElementById('f-cp-image').value.trim(),
+    order_index: parseInt(document.getElementById('f-cp-order').value) || 0,
+  };
+}
+
+document.getElementById('addClubProjectBtn')?.addEventListener('click', () => {
+  openModal('Nuevo proyecto', clubProjectFormHTML(), async () => {
+    const payload = clubProjectPayload();
+    if (!payload.title) return alert('El título es requerido');
+    await api('POST', '/api/admin/club/projects', payload);
+    closeModal();
+    loadClubProjects();
+  });
+  setTimeout(() => { lucide.createIcons(); bindClubUpload(); }, 50);
+});
+
+async function editClubProject(id) {
+  const items = await api('GET', '/api/admin/club/projects');
+  const item  = items.find(i => i.id === id);
+  if (!item) return;
+  openModal('Editar proyecto', clubProjectFormHTML(item), async () => {
+    const payload = clubProjectPayload();
+    if (!payload.title) return alert('El título es requerido');
+    await api('PUT', `/api/admin/club/projects/${id}`, payload);
+    closeModal();
+    loadClubProjects();
+  });
+  setTimeout(() => { lucide.createIcons(); bindClubUpload(); }, 50);
+}
+
+function deleteClubProject(id, title) {
+  confirm('Eliminar proyecto', `¿Eliminar "${title}"?`, async () => {
+    await api('DELETE', `/api/admin/club/projects/${id}`);
+    loadClubProjects();
+  });
+}
+
+// Club EIRI — banner (carrusel del hero)
+async function loadClubBanner() {
+  const container = document.getElementById('clubBannerList');
+  if (!container) return;
+  try {
+    const items = await api('GET', '/api/admin/club/banner');
+    if (!items.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Sin fotos. Si el banner está vacío, el hero muestra el LED de bienvenida.</p>';
+      return;
+    }
+    container.innerHTML = items.map(it => `
+      <div class="gal-drag-item" data-drag-id="${it.id}" draggable="true">
+        <span class="drag-handle" title="Arrastrar para reordenar"><i data-lucide="grip-vertical"></i></span>
+        <img src="${escHtml(it.image_url)}" class="gal-drag-thumb" onclick="window.open('${escHtml(it.image_url)}','_blank')" title="Ver imagen">
+        <div class="gal-drag-info"><strong>${escHtml(it.caption) || 'Sin descripción'}</strong></div>
+        <div class="gal-drag-actions">
+          <button class="btn-icon" onclick="editClubBanner(${it.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon btn-del" onclick="deleteClubBanner(${it.id})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>`).join('');
+    lucide.createIcons({ nodes: [container] });
+    initDragDrop(container, '/api/admin/club/banner/reorder');
+  } catch (e) {
+    container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function clubBannerFormHTML(item = {}) {
+  return `
+    <div class="field-group">
+      <label>Imagen <span style="color:var(--text-dim);font-weight:400">(URL o subir archivo)</span></label>
+      <input type="text" id="f-cb-image" value="${escHtml(item.image_url || '')}" placeholder="https://... o sube una imagen">
+      <div style="margin-top:0.4rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn-ghost btn--sm" id="f-cb-upload-btn"><i data-lucide="upload"></i> Subir imagen</button>
+        <input type="file" id="f-cb-file" accept=".png,.jpg,.jpeg,.gif,.webp" style="display:none">
+        <span id="f-cb-upload-status" style="font-size:0.72rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Descripción / alt <span style="color:var(--text-dim);font-weight:400">(opcional)</span></label>
+      <input type="text" id="f-cb-caption" value="${escHtml(item.caption || '')}">
+    </div>
+    <div class="field-group">
+      <label>Orden</label>
+      <input type="number" id="f-cb-order" value="${item.order_index ?? 0}" style="max-width:80px">
+    </div>`;
+}
+
+function bindClubBannerUpload() {
+  const btn    = document.getElementById('f-cb-upload-btn');
+  const file   = document.getElementById('f-cb-file');
+  const urlEl  = document.getElementById('f-cb-image');
+  const status = document.getElementById('f-cb-upload-status');
+  if (!btn) return;
+  btn.addEventListener('click', () => file.click());
+  file.addEventListener('change', async () => {
+    if (!file.files.length) return;
+    status.textContent = 'Subiendo...';
+    try {
+      const fd = new FormData();
+      fd.append('file', file.files[0]);
+      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      urlEl.value = data.url;
+      status.textContent = `Subido: ${file.files[0].name}`;
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+    }
+  });
+}
+
+function clubBannerPayload() {
+  return {
+    image_url:   document.getElementById('f-cb-image').value.trim(),
+    caption:     document.getElementById('f-cb-caption').value.trim(),
+    order_index: parseInt(document.getElementById('f-cb-order').value) || 0,
+  };
+}
+
+document.getElementById('addClubBannerBtn')?.addEventListener('click', () => {
+  openModal('Nueva foto del banner', clubBannerFormHTML(), async () => {
+    const payload = clubBannerPayload();
+    if (!payload.image_url) return alert('La imagen es requerida');
+    await api('POST', '/api/admin/club/banner', payload);
+    closeModal();
+    loadClubBanner();
+  });
+  setTimeout(() => { lucide.createIcons(); bindClubBannerUpload(); }, 50);
+});
+
+async function editClubBanner(id) {
+  const items = await api('GET', '/api/admin/club/banner');
+  const item  = items.find(i => i.id === id);
+  if (!item) return;
+  openModal('Editar foto del banner', clubBannerFormHTML(item), async () => {
+    const payload = clubBannerPayload();
+    if (!payload.image_url) return alert('La imagen es requerida');
+    await api('PUT', `/api/admin/club/banner/${id}`, payload);
+    closeModal();
+    loadClubBanner();
+  });
+  setTimeout(() => { lucide.createIcons(); bindClubBannerUpload(); }, 50);
+}
+
+function deleteClubBanner(id) {
+  confirm('Eliminar foto', '¿Eliminar esta foto del banner?', async () => {
+    await api('DELETE', `/api/admin/club/banner/${id}`);
+    loadClubBanner();
+  });
+}
+
+// Postulaciones al club — vista tabla/lista + exportar
+let APPLICATIONS = [];
+let appsViewMode = 'table';
+
+async function loadApplications() {
+  const container = document.getElementById('applicationsList');
+  if (!container) return;
+  container.innerHTML = '<p style="color:var(--text-dim);font-size:.85rem">Cargando...</p>';
+  try {
+    APPLICATIONS = await api('GET', '/api/admin/club/applications');
+    renderApplications();
+  } catch (e) {
+    container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function renderApplications() {
+  const container = document.getElementById('applicationsList');
+  if (!container) return;
+  if (!APPLICATIONS.length) {
+    container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Aún no hay postulaciones.</p>';
+    return;
+  }
+  container.innerHTML = appsViewMode === 'list' ? appsListHTML(APPLICATIONS) : appsTableHTML(APPLICATIONS);
+  lucide.createIcons({ nodes: [container] });
+}
+
+// Normaliza cada postulación a {id, created_at, ans:[{label,value,type}]}.
+// Usa el snapshot `answers`; si no existe (datos viejos), reconstruye desde las columnas legacy.
+function appsRows(items) {
+  return items.map(a => {
+    let ans = null;
+    try { ans = a.answers ? JSON.parse(a.answers) : null; } catch { ans = null; }
+    if (!ans || !ans.length) {
+      ans = [
+        { label: 'Nombre', value: a.name, type: 'short_text' },
+        { label: 'Correo', value: a.email, type: 'email' },
+        { label: 'Carrera', value: a.career, type: 'dropdown' },
+        { label: 'Generación de ingreso', value: a.generation, type: 'dropdown' },
+        { label: '¿Por qué quieres unirte?', value: a.message, type: 'paragraph' },
+      ].filter(x => x.value);
+    }
+    return { id: a.id, created_at: a.created_at, ans };
+  });
+}
+
+function appsLabels(rows) {
+  const seen = [];
+  rows.forEach(r => r.ans.forEach(x => { if (!seen.includes(x.label)) seen.push(x.label); }));
+  return seen;
+}
+
+function appsCell(x) {
+  if (!x || !x.value) return '<span class="apps-empty">—</span>';
+  const v = escHtml(x.value);
+  if (x.type === 'email' || /^[^@\s]+@[^@\s]+$/.test(x.value)) return `<a href="mailto:${v}">${v}</a>`;
+  return v;
+}
+
+function appsTableHTML(items) {
+  const rows = appsRows(items);
+  const labels = appsLabels(rows);
+  return `<div class="apps-table-wrap"><table class="apps-table">
+    <thead><tr><th>Fecha</th>${labels.map(l => `<th>${escHtml(l)}</th>`).join('')}<th></th></tr></thead>
+    <tbody>${rows.map(r => {
+      const map = {}; r.ans.forEach(x => { map[x.label] = x; });
+      return `<tr>
+        <td class="apps-date">${fmtFechaCL(r.created_at)}</td>
+        ${labels.map(l => `<td class="apps-msg" title="${escHtml((map[l] || {}).value || '')}">${appsCell(map[l])}</td>`).join('')}
+        <td><button class="btn-icon btn-del" onclick="deleteApplication(${r.id})" title="Eliminar"><i data-lucide="trash-2"></i></button></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`;
+}
+
+function appsListHTML(items) {
+  return appsRows(items).map(r => `
+    <div class="feedback-card">
+      <div class="feedback-card-head">
+        <span class="feedback-card-name">${escHtml((r.ans[0] || {}).value || 'Postulación')}</span>
+        <span class="feedback-card-date">${fmtFechaCL(r.created_at)}</span>
+        <button class="btn-icon btn-del" onclick="deleteApplication(${r.id})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+      </div>
+      ${r.ans.map(x => `<p class="feedback-card-msg"><span class="apps-k">${escHtml(x.label)}:</span> ${appsCell(x)}</p>`).join('')}
+    </div>`).join('');
+}
+
+document.getElementById('appsViewToggle')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-mode]');
+  if (!btn) return;
+  appsViewMode = btn.dataset.mode;
+  document.querySelectorAll('#appsViewToggle button').forEach(b => b.classList.toggle('active', b === btn));
+  renderApplications();
+});
+
+function exportApplications() {
+  if (!APPLICATIONS.length) return alert('No hay postulaciones para exportar.');
+  const rows = appsRows(APPLICATIONS);
+  const labels = appsLabels(rows);
+  const header = ['Fecha', ...labels];
+  const data = rows.map(r => {
+    const map = {}; r.ans.forEach(x => { map[x.label] = x.value; });
+    return [r.created_at, ...labels.map(l => map[l] || '')];
+  });
+  const esc  = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv  = '﻿' + [header, ...data].map(r => r.map(esc).join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `postulaciones-eiri-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportApplicationsBtn')?.addEventListener('click', exportApplications);
+
+function deleteApplication(id) {
+  confirm('Eliminar postulación', '¿Eliminar esta postulación? Esta acción no se puede deshacer.', async () => {
+    await api('DELETE', `/api/admin/club/applications/${id}`);
+    loadApplications();
+  });
+}
+
+document.getElementById('refreshApplicationsBtn')?.addEventListener('click', loadApplications)
+
+// ─── Constructor del formulario ───
+const Q_TYPES = { short_text: 'Texto corto', paragraph: 'Párrafo', email: 'Correo', dropdown: 'Desplegable', checkboxes: 'Casillas' };
+
+async function loadFormQuestions() {
+  const container = document.getElementById('questionsList');
+  if (!container) return;
+  try {
+    const items = await api('GET', '/api/admin/form/questions');
+    if (!items.length) {
+      container.innerHTML = '<p style="color:var(--text-dim);padding:1rem 0">Sin preguntas todavía. Agrega la primera.</p>';
+      return;
+    }
+    container.innerHTML = items.map(q => `
+      <div class="gal-drag-item ${q.enabled ? '' : 'q-disabled'}" data-drag-id="${q.id}" draggable="true">
+        <span class="drag-handle" title="Reordenar"><i data-lucide="grip-vertical"></i></span>
+        <div class="gal-drag-info">
+          <strong>${escHtml(q.label)}${q.required ? ' <span class="q-req">*</span>' : ''}</strong>
+          <span class="gal-drag-caption">${Q_TYPES[q.type] || q.type}${q.type === 'dropdown' && q.allow_other ? ' · con "Otro"' : ''}${q.enabled ? '' : ' · oculta'}</span>
+        </div>
+        <div class="gal-drag-actions">
+          <button class="btn-icon" onclick="editQuestion(${q.id})" title="Editar"><i data-lucide="edit-2"></i></button>
+          <button class="btn-icon btn-del" onclick="deleteQuestion(${q.id},'${escHtml(q.label)}')" title="Eliminar"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>`).join('');
+    lucide.createIcons({ nodes: [container] });
+    initDragDrop(container, '/api/admin/form/questions/reorder');
+  } catch (e) {
+    container.innerHTML = `<p style="color:#ef4444">${e.message}</p>`;
+  }
+}
+
+function questionFormHTML(q = {}) {
+  const t = q.type || 'short_text';
+  return `
+    <div class="field-group">
+      <label>Pregunta</label>
+      <input type="text" id="f-q-label" value="${escHtml(q.label || '')}" placeholder="Ej. ¿Qué te gustaría aprender?">
+    </div>
+    <div class="field-group">
+      <label>Tipo de respuesta</label>
+      <select id="f-q-type">${Object.entries(Q_TYPES).map(([v, l]) => `<option value="${v}" ${t === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    </div>
+    <div class="field-group" id="f-q-options-wrap" ${(t === 'dropdown' || t === 'checkboxes') ? '' : 'hidden'}>
+      <label>Opciones <span style="color:var(--text-dim);font-weight:400">(una por línea)</span></label>
+      <textarea id="f-q-options" rows="5" placeholder="Opción 1&#10;Opción 2">${escHtml(q.options || '')}</textarea>
+    </div>
+    <div style="display:flex;gap:1.4rem;flex-wrap:wrap;margin-top:0.3rem">
+      <label class="q-check"><input type="checkbox" id="f-q-required" ${q.required ? 'checked' : ''}><span>Obligatoria</span></label>
+      <label class="q-check" id="f-q-other-wrap" style="${t === 'dropdown' ? '' : 'display:none'}"><input type="checkbox" id="f-q-other" ${q.allow_other ? 'checked' : ''}><span>Permitir "Otro"</span></label>
+      <label class="q-check"><input type="checkbox" id="f-q-enabled" ${q.enabled === 0 ? '' : 'checked'}><span>Visible</span></label>
+    </div>`;
+}
+
+function bindQuestionForm() {
+  const typeSel = document.getElementById('f-q-type');
+  if (!typeSel) return;
+  typeSel.addEventListener('change', () => {
+    const t = typeSel.value;
+    document.getElementById('f-q-options-wrap').hidden = !(t === 'dropdown' || t === 'checkboxes');
+    document.getElementById('f-q-other-wrap').style.display = t === 'dropdown' ? '' : 'none';
+  });
+}
+
+function questionPayload() {
+  return {
+    label:       document.getElementById('f-q-label').value.trim(),
+    type:        document.getElementById('f-q-type').value,
+    options:     document.getElementById('f-q-options').value.trim(),
+    required:    document.getElementById('f-q-required').checked ? 1 : 0,
+    allow_other: document.getElementById('f-q-other').checked ? 1 : 0,
+    enabled:     document.getElementById('f-q-enabled').checked ? 1 : 0,
+  };
+}
+
+document.getElementById('addQuestionBtn')?.addEventListener('click', () => {
+  openModal('Nueva pregunta', questionFormHTML(), async () => {
+    const payload = questionPayload();
+    if (!payload.label) return alert('Escribe la pregunta');
+    await api('POST', '/api/admin/form/questions', payload);
+    closeModal();
+    loadFormQuestions();
+  });
+  setTimeout(() => { lucide.createIcons(); bindQuestionForm(); }, 50);
+});
+
+async function editQuestion(id) {
+  const items = await api('GET', '/api/admin/form/questions');
+  const q = items.find(i => i.id === id);
+  if (!q) return;
+  openModal('Editar pregunta', questionFormHTML(q), async () => {
+    const payload = questionPayload();
+    if (!payload.label) return alert('Escribe la pregunta');
+    await api('PUT', `/api/admin/form/questions/${id}`, payload);
+    closeModal();
+    loadFormQuestions();
+  });
+  setTimeout(() => { lucide.createIcons(); bindQuestionForm(); }, 50);
+}
+
+function deleteQuestion(id, label) {
+  confirm('Eliminar pregunta', `¿Eliminar "${label}"? Las postulaciones ya recibidas se conservan.`, async () => {
+    await api('DELETE', `/api/admin/form/questions/${id}`);
+    loadFormQuestions();
   });
 }
 

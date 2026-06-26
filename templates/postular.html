@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Postula a EIRI — Equipo Interdisciplinario de Robótica e Innovación</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <meta name="description" content="Postula al Equipo Interdisciplinario de Robótica e Innovación (EIRI), Universidad del Desarrollo.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260625">
+    <link rel="stylesheet" href="/static/css/eiri.css?v=20260625d">
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="club-page postular-page">
+
+    {% set showcase = true %}
+
+    <section class="postular-hero">
+        {% if heroImage %}
+        <div class="postular-hero-bg" style="background-image:url('{{ heroImage }}')"></div>
+        {% else %}
+        <div class="postular-hero-bg postular-hero-bg--ph"></div>
+        {% endif %}
+        <div class="postular-hero-overlay"></div>
+        <div class="container postular-hero-inner" data-aos>
+            <h1 class="club-wordmark"><span class="glitch" data-text="EIRI">EIRI</span></h1>
+            <p class="postular-hero-sub">{{ config.club_acronym }}</p>
+        </div>
+    </section>
+
+    <section class="postular-body">
+        <div class="container postular-layout">
+            <div class="postular-intro reveal-l">
+                <h2 class="club-h2">Postula al club</h2>
+                <p class="club-body">¿Quieres construir, programar e innovar con nosotros? Completa el formulario y nos pondremos en contacto contigo.</p>
+            </div>
+            <div class="postular-form forms-style reveal-r">
+                {% include "partials/_apply_form.html" %}
+            </div>
+        </div>
+    </section>
+
+    {% include "partials/_footer.html" %}
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
+    <script src="/static/js/eiri.js?v=20260625d"></script>
+</body>
+
+</html>

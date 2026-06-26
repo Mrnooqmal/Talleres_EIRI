@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/css/admin.css?v=20260626">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body>
@@ -40,6 +40,10 @@
                 <i data-lucide="image"></i>
                 <span>Galería</span>
             </button>
+            <button class="adm-nav-item" data-view="club">
+                <i data-lucide="rocket"></i>
+                <span>Club EIRI</span>
+            </button>
             <button class="adm-nav-item" data-view="teams">
                 <i data-lucide="shield"></i>
                 <span>Equipos</span>
@@ -59,6 +63,14 @@
             <button class="adm-nav-item" data-view="feedback">
                 <i data-lucide="message-square"></i>
                 <span>Comentarios</span>
+            </button>
+            <button class="adm-nav-item" data-view="applications">
+                <i data-lucide="user-plus"></i>
+                <span>Postulaciones</span>
+            </button>
+            <button class="adm-nav-item" data-view="form">
+                <i data-lucide="clipboard-list"></i>
+                <span>Formulario</span>
             </button>
             <button class="adm-nav-item" data-view="logs">
                 <i data-lucide="activity"></i>
@@ -357,6 +369,103 @@
                 </button>
             </div>
             <div id="feedbackList"></div>
+        </div>
+
+        <!-- Club EIRI view -->
+        <div id="view-club" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Club EIRI</h2>
+                    <p class="adm-sub">Textos y proyectos de la página del club</p>
+                </div>
+                <a class="btn-ghost" href="/eiri" target="_blank" rel="noopener">
+                    <i data-lucide="external-link"></i> Ver página
+                </a>
+            </div>
+
+            <div class="config-card">
+                <div class="config-card-head">
+                    <i data-lucide="type"></i>
+                    <h3>Textos</h3>
+                </div>
+                <div class="field-group">
+                    <label>Tagline</label>
+                    <input type="text" id="cfg-club_tagline">
+                </div>
+                <div class="field-group">
+                    <label>Sigla completa</label>
+                    <input type="text" id="cfg-club_acronym">
+                </div>
+                <div class="field-group">
+                    <label>Introducción</label>
+                    <textarea id="cfg-club_intro" rows="3"></textarea>
+                </div>
+                <div class="field-group">
+                    <label>Historia</label>
+                    <textarea id="cfg-club_history" rows="4"></textarea>
+                </div>
+                <div class="config-card-foot">
+                    <button class="btn-primary" id="saveClubTextBtn">
+                        <i data-lucide="save"></i> Guardar textos
+                    </button>
+                    <p class="cfg-feedback" id="clubTextFeedback"></p>
+                </div>
+            </div>
+
+            <div class="adm-view-header" style="margin-top:2rem">
+                <div>
+                    <h2>Banner</h2>
+                    <p class="adm-sub">Fotos del carrusel principal de /eiri</p>
+                </div>
+                <button class="btn-primary" id="addClubBannerBtn">
+                    <i data-lucide="plus"></i> Nueva foto
+                </button>
+            </div>
+            <div id="clubBannerList"></div>
+
+            <div class="adm-view-header" style="margin-top:2rem">
+                <div>
+                    <h2>Proyectos</h2>
+                    <p class="adm-sub">Carrusel de proyectos del club</p>
+                </div>
+                <button class="btn-primary" id="addClubProjectBtn">
+                    <i data-lucide="plus"></i> Nuevo proyecto
+                </button>
+            </div>
+            <div id="clubProjectsList"></div>
+        </div>
+
+        <!-- Postulaciones view -->
+        <div id="view-applications" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Postulaciones</h2>
+                    <p class="adm-sub">Solicitudes de inscripción al club</p>
+                </div>
+                <div class="apps-actions">
+                    <div class="view-toggle" id="appsViewToggle" role="group" aria-label="Vista">
+                        <button type="button" data-mode="table" class="active" title="Vista de tabla"><i data-lucide="table-2"></i></button>
+                        <button type="button" data-mode="list" title="Vista de lista"><i data-lucide="layout-list"></i></button>
+                    </div>
+                    <button class="btn-ghost" id="exportApplicationsBtn" title="Exportar a Excel/CSV"><i data-lucide="sheet"></i> Exportar</button>
+                    <button class="btn-icon" id="refreshApplicationsBtn" title="Actualizar"><i data-lucide="refresh-cw"></i></button>
+                </div>
+            </div>
+            <div id="applicationsList"></div>
+        </div>
+
+        <!-- Formulario (constructor) view -->
+        <div id="view-form" class="adm-view">
+            <div class="adm-view-header">
+                <div>
+                    <h2>Formulario de postulación</h2>
+                    <p class="adm-sub">Edita, agrega y reordena las preguntas. Se reflejan en /eiri y /postular.</p>
+                </div>
+                <button class="btn-primary" id="addQuestionBtn">
+                    <i data-lucide="plus"></i> Nueva pregunta
+                </button>
+            </div>
+            <div id="questionsList"></div>
         </div>
 
         <!-- Logs view -->

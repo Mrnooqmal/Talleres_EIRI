@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EIRI — Equipo Interdisciplinario de Robótica e Innovación</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <meta name="description" content="{{ config.club_acronym }} — Universidad del Desarrollo">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2/dist/css/tom-select.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=20260625">
+    <link rel="stylesheet" href="/static/css/eiri.css?v=20260625d">
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+
+<body class="club-page">
+
+    {% set showcase = true %}
+    {% include "partials/_site_header.html" %}
+
+    <section id="top" class="club-hero">
+        <div class="swiper club-hero-swiper">
+            <div class="swiper-wrapper" id="heroSlides">
+                <div class="swiper-slide"><div class="hero-slide-fallback"></div></div>
+            </div>
+        </div>
+        <div class="club-hero-overlay"></div>
+
+        <div class="club-hero-content container" data-aos>
+            <h1 class="club-wordmark"><span class="glitch" data-text="EIRI">EIRI</span></h1>
+            <p class="club-hero-tagline">{{ config.club_tagline }}</p>
+            <div class="club-hero-cta">
+                <a href="#postular" class="btn btn-primary">Postular al club <i data-lucide="arrow-right"></i></a>
+                <a href="#proyectos" class="btn btn-ghost-outline">Ver proyectos</a>
+            </div>
+        </div>
+
+        <div class="club-hero-pagination"></div>
+        <a href="#sobre" class="club-scroll-cue" aria-label="Bajar"><i data-lucide="chevron-down"></i></a>
+    </section>
+
+    <section id="sobre" class="club-section club-about">
+        <div class="container club-about-grid">
+            <div class="club-about-text reveal-l">
+                <h2 class="club-h2">El club</h2>
+                <p class="club-body">{{ config.club_intro }}</p>
+                <div class="club-chips">
+                    <span class="chip">Robótica</span>
+                    <span class="chip">Electrónica</span>
+                    <span class="chip">Programación</span>
+                    <span class="chip">Diseño</span>
+                    <span class="chip">Innovación</span>
+                    <span class="chip">Impresión 3D</span>
+                </div>
+            </div>
+
+            <div class="club-acronym-panel reveal-r">
+                <ul class="club-acronym-list">
+                    <li><span class="club-acronym-letter">E</span><span class="club-acronym-word">Equipo</span></li>
+                    <li><span class="club-acronym-letter">I</span><span class="club-acronym-word">Interdisciplinario</span></li>
+                    <li><span class="club-acronym-letter">R</span><span class="club-acronym-word">de Robótica</span></li>
+                    <li><span class="club-acronym-letter">I</span><span class="club-acronym-word">e Innovación</span></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="historia" class="club-section club-history">
+        <div class="container club-history-inner reveal-up">
+            <span class="club-rule"></span>
+            <h2 class="club-h2">Cómo nació EIRI</h2>
+            <p class="club-history-text">{{ config.club_history }}</p>
+        </div>
+    </section>
+
+    <section id="proyectos" class="club-section club-projects">
+        <div class="container">
+            <div class="club-projects-head reveal-up">
+                <h2 class="club-h2">Proyectos</h2>
+                <p class="club-body club-projects-sub">Una muestra de lo que el equipo ha construido.</p>
+            </div>
+            <div class="club-rows" id="projRows">
+                <div class="proj-loading"><i data-lucide="loader-2" class="spin"></i> Cargando proyectos...</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="postular" class="club-section club-apply">
+        <div class="container">
+            <div class="club-apply-card reveal-up">
+                <div class="club-apply-intro">
+                    <h2 class="club-h2">Postula al club</h2>
+                    <p class="club-body">¿Quieres construir, programar e innovar con nosotros? Déjanos tus datos y te contactamos.</p>
+                </div>
+                {% include "partials/_apply_form.html" %}
+            </div>
+        </div>
+    </section>
+
+    {% include "partials/_footer.html" %}
+
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2/dist/js/tom-select.complete.min.js"></script>
+    <script src="/static/js/eiri.js?v=20260625d"></script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+</body>
+
+</html>
