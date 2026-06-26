@@ -37,8 +37,7 @@
 .club-hero-overlay {
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
-    linear-gradient(to top, rgba(4,8,15,0.94) 2%, rgba(4,8,15,0.18) 48%, rgba(4,8,15,0.55) 100%),
-    linear-gradient(to right, rgba(4,8,15,0.78), transparent 58%);
+    linear-gradient(to top, rgba(4,8,15,0.94) 2%, rgba(4,8,15,0.18) 48%, rgba(4,8,15,0.55) 100%);
 }
 
 .club-hero-content {
