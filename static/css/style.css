@@ -1403,6 +1403,7 @@ a.acc-session-title:hover { color: var(--blue-300); }
 }
 .bk-name { flex: 1; font-size: 0.8rem; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bk-row-score { font-family: var(--f-mono); font-size: 0.78rem; font-weight: 700; color: var(--text-dim); min-width: 1.1rem; text-align: center; }
+.bk-row-score:empty { display: none; }
 .bk-row--tbd { opacity: 0.5; }
 .bk-row--tbd .bk-name { font-weight: 400; }
 .bk-row--win { background: linear-gradient(90deg, rgba(201,162,39,0.2), rgba(201,162,39,0.04)); }
@@ -1410,6 +1411,35 @@ a.acc-session-title:hover { color: var(--blue-300); }
 .bk-row--win .bk-row-score { color: var(--gold-300); }
 .bk-row--lose { opacity: 0.55; }
 .bk-row--lose .bk-name { color: var(--text-dim); }
+
+/* En escritorio (con mouse) el bracket muestra SOLO el logo en casillas cuadradas.
+   El nombre y el marcador se revelan al pasar el cursor, sin reservar espacio antes. */
+@media (hover: hover) {
+  .bk-side .bk-card,
+  .bk-center .bk-card { width: max-content; max-width: 100%; margin: 0 auto; }
+
+  .bk-side .bk-row,
+  .bk-center .bk-row { justify-content: center; gap: 0.35rem; padding: 0.5rem; }
+
+  .bk-side .bk-logo,
+  .bk-center .bk-logo { width: 44px; height: 44px; border-radius: 8px; }
+
+  /* Colapsados a ancho 0 (sin hueco) hasta el hover */
+  .bk-side .bk-name,   .bk-center .bk-name,
+  .bk-side .bk-row-score, .bk-center .bk-row-score {
+    flex: 0 1 auto;
+    max-width: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.22s var(--ease-out), opacity 0.18s var(--ease-out), margin 0.22s;
+  }
+  .bk-card:hover .bk-name      { max-width: 150px; margin-left: 0.15rem; opacity: 1; }
+  .bk-card:hover .bk-row-score { max-width: 2.2rem; opacity: 1; }
+}
 
 /* ── Conectores ── */
 /* Izquierda: stub a la derecha (hacia el centro) en todos los partidos */
