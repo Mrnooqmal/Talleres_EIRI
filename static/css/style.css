@@ -1422,7 +1422,7 @@ a.acc-session-title:hover { color: var(--blue-300); }
   .bk-center .bk-row { justify-content: center; gap: 0.35rem; padding: 0.5rem; }
 
   .bk-side .bk-logo,
-  .bk-center .bk-logo { width: 44px; height: 44px; border-radius: 8px; }
+  .bk-center .bk-logo { width: 52px; height: 52px; border-radius: 9px; }
 
   /* Colapsados a ancho 0 (sin hueco) hasta el hover */
   .bk-side .bk-name,   .bk-center .bk-name,
