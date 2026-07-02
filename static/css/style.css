@@ -1395,7 +1395,7 @@ a.acc-session-title:hover { color: var(--blue-300); }
 /* Filas de equipo dentro de la tarjeta */
 .bk-row { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.65rem; }
 .bk-row + .bk-row { border-top: 1px solid var(--border); }
-.bk-logo { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; background: var(--bg-2); flex-shrink: 0; }
+.bk-logo { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; background: var(--bg-2); flex-shrink: 0; }
 .bk-logo--ph {
   display: flex; align-items: center; justify-content: center;
   font-family: var(--f-mono); font-size: 0.66rem; font-weight: 700;
@@ -1410,12 +1410,6 @@ a.acc-session-title:hover { color: var(--blue-300); }
 .bk-row--win .bk-row-score { color: var(--gold-300); }
 .bk-row--lose { opacity: 0.55; }
 .bk-row--lose .bk-name { color: var(--text-dim); }
-
-/* En escritorio el bracket muestra solo el logo; el nombre se revela al pasar el mouse */
-@media (hover: hover) {
-  .bk-name { opacity: 0; transition: opacity 0.18s var(--ease-out); }
-  .bk-card:hover .bk-name { opacity: 1; }
-}
 
 /* ── Conectores ── */
 /* Izquierda: stub a la derecha (hacia el centro) en todos los partidos */
@@ -1473,7 +1467,7 @@ a.acc-session-title:hover { color: var(--blue-300); }
 
 @media (max-width: 640px) {
   .bk-row { padding: 0.4rem 0.45rem; gap: 0.4rem; }
-  .bk-logo { width: 18px; height: 18px; }
+  .bk-logo { width: 24px; height: 24px; }
   .bk-name { font-size: 0.68rem; }
   .bk-row-score { font-size: 0.7rem; min-width: 0.9rem; }
   .bk-round-title, .bk-center-title { font-size: 0.5rem; letter-spacing: 0.12em; }
