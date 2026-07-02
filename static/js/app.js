@@ -681,7 +681,7 @@ async function loadBracket() {
   try {
     const data  = await fetch('/api/bracket').then(r => r.json());
     const titleEl = document.getElementById('bracketTitle');
-    const subEl   = document.getElementById('bracketSubtitle');Adreansitou
+    const subEl   = document.getElementById('bracketSubtitle');
     if (titleEl && data.title) titleEl.textContent = data.title;
     if (subEl)   subEl.textContent = data.subtitle || '';
 
