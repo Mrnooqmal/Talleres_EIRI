@@ -21,7 +21,7 @@ nunjucks.configure(path.join(__dirname, 'templates'), { autoescape: true, expres
 const S3_BUCKET     = process.env.S3_BUCKET || ''
 const S3_REGION     = process.env.AWS_REGION || 'sa-east-1'
 const S3_PUBLIC_URL = (process.env.S3_PUBLIC_URL || '').replace(/\/$/, '')
-const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf|ino|c|cpp|h|hpp|py|js|ts|json|txt|md|csv)$/i
+const ALLOWED_FILES = /\.(png|jpg|jpeg|gif|webp|svg|pdf|ino|c|cpp|h|hpp|py|js|ts|json|txt|md|csv|mp3|m4a|ogg|wav)$/i
 const IMAGE_RE      = /\.(png|jpg|jpeg|gif|webp)$/i  // formatos que Sharp puede optimizar (no SVG)
 
 const uploadsDir = path.join(__dirname, 'static', 'uploads')
@@ -234,6 +234,7 @@ async function initDB() {
   try { await db.run("ALTER TABLE teams ADD COLUMN logo TEXT DEFAULT ''") } catch {}
   try { await db.run("ALTER TABLE club_applications ADD COLUMN generation TEXT DEFAULT ''") } catch {}
   try { await db.run("ALTER TABLE club_applications ADD COLUMN answers TEXT DEFAULT ''") } catch {}
+  try { await db.run("ALTER TABLE teams ADD COLUMN anthem TEXT DEFAULT ''") } catch {}
 
   // Seed admin user
   const hasUsers = await db.get('SELECT 1 FROM admin_users LIMIT 1')
@@ -812,10 +813,10 @@ app.get('/api/admin/teams', requireAdmin, async (req, res) => {
 })
 
 app.post('/api/admin/teams', requireAdmin, async (req, res) => {
-  const { name, logo = '' } = req.body
+  const { name, logo = '', anthem = '' } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'Nombre requerido' })
   try {
-    const r = await db.run('INSERT INTO teams (name, logo) VALUES (?,?)', name.trim(), logo)
+    const r = await db.run('INSERT INTO teams (name, logo, anthem) VALUES (?,?,?)', name.trim(), logo, anthem)
     await log(req, 'create_team', name.trim())
     res.status(201).json({ id: r.lastInsertRowid })
   } catch {
@@ -824,10 +825,10 @@ app.post('/api/admin/teams', requireAdmin, async (req, res) => {
 })
 
 app.put('/api/admin/teams/:id', requireAdmin, async (req, res) => {
-  const { name, logo = '' } = req.body
+  const { name, logo = '', anthem = '' } = req.body
   if (!name?.trim()) return res.status(400).json({ error: 'Nombre requerido' })
   try {
-    await db.run('UPDATE teams SET name=?, logo=? WHERE id=?', name.trim(), logo, req.params.id)
+    await db.run('UPDATE teams SET name=?, logo=?, anthem=? WHERE id=?', name.trim(), logo, anthem, req.params.id)
     await log(req, 'update_team', req.params.id)
     res.json({ ok: true })
   } catch {
