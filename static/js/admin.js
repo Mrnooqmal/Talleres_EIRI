@@ -1824,50 +1824,78 @@ function bindTeamAnthemUpload() {
   file?.addEventListener('change', async () => {
     if (!file.files.length) return;
     const f = file.files[0];
-    status.textContent = 'Subiendo...';
+    status.textContent = 'Procesando audio...';
     try {
-      // Intentar presigned URL (subida directa a S3, sin limite de 4.5MB)
-      let uploaded = false;
-      try {
-        const presignRes = await fetch('/api/admin/upload/presign', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: f.name, contentType: f.type || 'audio/mpeg' }),
-        });
-        if (presignRes.ok) {
-          const { presignedUrl, publicUrl } = await presignRes.json();
-          // Subir directo a S3
-          status.textContent = 'Subiendo a la nube...';
-          const s3Res = await fetch(presignedUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': f.type || 'audio/mpeg', 'Cache-Control': 'public, max-age=31536000, immutable' },
-            body: f,
-          });
-          if (!s3Res.ok) throw new Error('Error al subir a S3');
-          input.value = publicUrl;
-          uploaded = true;
-        }
-      } catch (presignErr) {
-        // Presign no disponible (dev local sin S3) — fallback al upload normal
-        console.warn('Presign no disponible, usando upload normal:', presignErr.message);
-      }
+      // ── Recortar y comprimir: 15s mono 22kHz WAV (~660KB) ──
+      const MAX_SECS = 15;
+      const OUT_RATE = 22050;
+      const arrayBuf = await f.arrayBuffer();
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const decoded = await actx.decodeAudioData(arrayBuf);
+      const duration = Math.min(decoded.duration, MAX_SECS);
+      const frames = Math.floor(duration * OUT_RATE);
 
-      // Fallback: upload multipart tradicional (funciona en local, falla >4.5MB en Vercel)
-      if (!uploaded) {
-        const fd = new FormData();
-        fd.append('file', f);
-        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 100)); }
-        if (!res.ok) throw new Error(data.error || 'Error en la subida');
-        input.value = data.url;
-      }
-      status.textContent = 'Listo ✓';
+      // Render offline a mono + tasa baja
+      const offline = new OfflineAudioContext(1, frames, OUT_RATE);
+      const src = offline.createBufferSource();
+      src.buffer = decoded;
+      src.connect(offline.destination);
+      src.start(0, 0, duration);
+      const rendered = await offline.startRendering();
+      const samples = rendered.getChannelData(0);
+
+      // Codificar WAV
+      const wavBuf = encodeWAV(samples, OUT_RATE);
+      const wavBlob = new Blob([wavBuf], { type: 'audio/wav' });
+      const wavName = f.name.replace(/\.[^.]+$/, '') + '_clip.wav';
+
+      actx.close();
+
+      // Subir el WAV recortado (~660KB, bien dentro del limite de 4.5MB)
+      status.textContent = `Subiendo (${Math.round(wavBlob.size / 1024)}KB)...`;
+      const fd = new FormData();
+      fd.append('file', wavBlob, wavName);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 120)); }
+      if (!res.ok) throw new Error(data.error || 'Error en la subida');
+      input.value = data.url;
+      status.textContent = `Listo ✓ (${Math.round(duration)}s, ${Math.round(wavBlob.size / 1024)}KB)`;
     } catch (e) {
+      console.error('Anthem upload error:', e);
       status.textContent = 'Error: ' + e.message;
     }
   });
+}
+
+// Codifica PCM float32 a WAV 16-bit
+function encodeWAV(samples, sampleRate) {
+  const numCh = 1, bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const dataLen = samples.length * bytesPerSample;
+  const buf = new ArrayBuffer(44 + dataLen);
+  const view = new DataView(buf);
+  const writeStr = (off, str) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + dataLen, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numCh * bytesPerSample, true);
+  view.setUint16(32, numCh * bytesPerSample, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeStr(36, 'data');
+  view.setUint32(40, dataLen, true);
+  let off = 44;
+  for (let i = 0; i < samples.length; i++, off += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return buf;
 }
 
 document.getElementById('addTeamBtn')?.addEventListener('click', () => {
