@@ -147,17 +147,38 @@ function renderSelect() {
   const backup = loadBackup();
   const resumable = backup && playable(matchOf(backup.sel) || {});
 
-  const roundsHTML = b.rounds.map((round, r) => `
-    <div class="ar-sel-round">
-      <div class="ar-sel-round-title">${roundLabel({ kind: 'round', r, i: 0 })}</div>
-      ${round.map((m, i) => selCard(m, { kind: 'round', r, i })).join('')}
-    </div>`).join('');
+  // Bracket espejado como el de la home: ambos lados convergen a la final al centro.
+  const n = b.rounds.length;
+  const sideRounds = n - 1;
+  const buildSide = (side) => {
+    const order = side === 'left' ? [...Array(sideRounds).keys()] : [...Array(sideRounds).keys()].reverse();
+    let h = `<div class="ar-bk-side" style="flex:${sideRounds}">`;
+    order.forEach(r => {
+      const matches = b.rounds[r];
+      const half = matches.length / 2;
+      const slice = side === 'left' ? matches.slice(0, half) : matches.slice(half);
+      const baseIdx = side === 'left' ? 0 : half;
+      h += `<div class="ar-bk-round">
+        <div class="ar-sel-round-title">${roundLabel({ kind: 'round', r, i: 0 })}</div>
+        <div class="ar-bk-matches">${slice.map((m, j) => selCard(m, { kind: 'round', r, i: baseIdx + j })).join('')}</div>
+      </div>`;
+    });
+    return h + '</div>';
+  };
 
   const thirdHTML = (b.third && (b.third.a != null || b.third.b != null)) ? `
-    <div class="ar-sel-round ar-sel-round--third">
-      <div class="ar-sel-round-title">3er lugar</div>
+    <div class="ar-bk-third">
+      <div class="ar-sel-round-title ar-sel-round-title--third">3er lugar</div>
       ${selCard(b.third, { kind: 'third' })}
     </div>` : '';
+
+  const centerHTML = `<div class="ar-bk-round ar-bk-center" style="flex:1">
+    <div class="ar-sel-round-title ar-sel-round-title--final">${roundLabel({ kind: 'round', r: n - 1, i: 0 })}</div>
+    <div class="ar-bk-matches">${selCard(b.rounds[n - 1][0], { kind: 'round', r: n - 1, i: 0 })}</div>
+    ${thirdHTML}
+  </div>`;
+
+  const bracketHTML = `<div class="ar-bk-scroll"><div class="ar-bk">${buildSide('left')}${centerHTML}${buildSide('right')}</div></div>`;
 
   el.innerHTML = `
     ${resumable ? `<div class="ar-resume">
@@ -169,12 +190,13 @@ function renderSelect() {
       <div class="ar-sel-main">
         <h1 class="ar-title">${esc(b.title)}</h1>
         <p class="ar-sub">Elige el próximo combate — los partidos listos brillan en dorado</p>
-        <div class="ar-sel-rounds">${roundsHTML}${thirdHTML}</div>
+        ${bracketHTML}
         <div class="ar-timer-cfg">
+          <i data-lucide="timer"></i>
           <span>Duración del combate</span>
-          <button class="ar-btn ar-btn--ghost" id="ar-dur-minus">−30s</button>
+          <button class="ar-icon-btn" id="ar-dur-minus" title="−30s"><i data-lucide="minus"></i></button>
           <strong id="ar-dur">${fmtClock(S.duration)}</strong>
-          <button class="ar-btn ar-btn--ghost" id="ar-dur-plus">+30s</button>
+          <button class="ar-icon-btn" id="ar-dur-plus" title="+30s"><i data-lucide="plus"></i></button>
         </div>
       </div>
       <aside class="ar-side">
@@ -200,11 +222,42 @@ function fmtClock(s) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+// ─── Modal propio (reemplaza confirm/alert del navegador) ───
+let modalOpen = false;
+function arModal(msg, { cancel = true, okText = 'Confirmar', cancelText = 'Volver' } = {}) {
+  return new Promise((resolve) => {
+    modalOpen = true;
+    const wrap = document.createElement('div');
+    wrap.className = 'ar-modal';
+    wrap.innerHTML = `<div class="ar-modal-box">
+      <p>${esc(msg)}</p>
+      <div class="ar-modal-actions">
+        ${cancel ? `<button class="ar-btn ar-btn--ghost" data-r="0">${esc(cancelText)}</button>` : ''}
+        <button class="ar-btn ar-btn--gold" data-r="1">${esc(okText)}</button>
+      </div>
+    </div>`;
+    const close = (val) => {
+      document.removeEventListener('keydown', onKey, true);
+      wrap.remove();
+      modalOpen = false;
+      resolve(val);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(false); } };
+    document.addEventListener('keydown', onKey, true);
+    wrap.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-r]');
+      if (b) return close(b.dataset.r === '1');
+      if (e.target === wrap) close(false);   // click fuera = cancelar
+    });
+    document.body.appendChild(wrap);
+  });
+}
+
 // ─── Fase ②: presentación VS ─────────────────────────
 function startIntro() {
   const m = matchOf(S.sel);
   const A = team(m.a), B = team(m.b);
-  if (!A || !B) { window.alert('Falta un equipo de este partido (¿fue eliminado?). Revisa el bracket en el panel admin.'); return; }
+  if (!A || !B) { arModal('Falta un equipo de este partido (¿fue eliminado?). Revisa el bracket en el panel admin.', { cancel: false, okText: 'Entendido' }); return; }
   setPhase('intro');
   const side = (t, dir) => `
     <div class="ar-vs-side ar-vs-side--${dir}">
@@ -224,7 +277,7 @@ function startIntro() {
       </div>
       <div class="ar-vs-actions">
         <button class="ar-btn ar-btn--ghost" id="ar-vs-back"><i data-lucide="arrow-left"></i> Volver</button>
-        <button class="ar-btn ar-btn--ghost" id="ar-vs-stop"><i data-lucide="square"></i> Detener música</button>
+        <button class="ar-btn ar-btn--ghost" id="ar-vs-stop"><i data-lucide="volume-x"></i> Detener música</button>
         <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-vs-go">¡A LA ARENA!</button>
       </div>
     </div>`;
@@ -279,19 +332,21 @@ function renderFight() {
     </div>`;
   $('#ph-fight').innerHTML = `
     <div class="ar-f">
+      <div class="ar-led ar-f-brand">Battlebots · EIRI UDD</div>
       <div class="ar-f-round">${roundLabel(S.sel)}</div>
       <div class="ar-f-stage">
         ${side(A, 'a')}
         <div class="ar-f-center">
           <div class="ar-f-clock" id="ar-clock">${fmtClock(S.remain)}</div>
           <div class="ar-f-sudden-label" id="ar-sudden-label" hidden>MUERTE SÚBITA</div>
-          <button class="ar-btn ar-btn--ghost" id="ar-pause">Pausa (Espacio)</button>
-          <button class="ar-btn ar-btn--ghost" id="ar-abort">Cancelar combate</button>
+          <button class="ar-btn ar-btn--ghost ar-btn--ctl" id="ar-pause"></button>
+          <button class="ar-btn ar-btn--ghost ar-btn--ctl" id="ar-abort"><i data-lucide="x"></i> Cancelar combate</button>
         </div>
         ${side(B, 'b')}
       </div>
       <div class="ar-f-countdown" id="ar-countdown" hidden></div>
     </div>`;
+  setPauseBtn(!S.running);
   $('#ph-fight').querySelectorAll('.ar-f-hearts').forEach(el => {
     el.addEventListener('click', (e) => {
       const h = e.target.closest('.ar-heart');
@@ -302,17 +357,54 @@ function renderFight() {
   });
   if (isFinal(S.sel)) spawnSparks();
   $('#ar-pause').addEventListener('click', () => setPaused(S.running));
-  $('#ar-abort').addEventListener('click', () => {
-    if (!window.confirm('¿Cancelar este combate? No se guardará nada.')) return;
+  $('#ar-abort').addEventListener('click', async () => {
+    // Pausa mientras se pregunta; si el operador se arrepiente, reanuda como estaba.
+    const wasRunning = S.running;
+    if (wasRunning) setPaused(true);
+    const ok = await arModal('¿Cancelar este combate? No se guardará nada.', { okText: 'Sí, cancelar', cancelText: 'Seguir peleando' });
+    if (!ok) { if (wasRunning && !S.winner && !inCountdown) setPaused(false); return; }
     cancelCountdown(); pauseTimer(); clearBackup(); stopAnthem(); setPhase('select');
   });
   refreshSuddenUI();
+  lucide.createIcons({ nodes: [$('#ph-fight')] });
 }
 
+// Botón de pausa con ícono y atajo visible; se redibuja al pausar/reanudar.
+function setPauseBtn(paused) {
+  const btn = $('#ar-pause');
+  if (!btn) return;
+  btn.innerHTML = `<i data-lucide="${paused ? 'play' : 'pause'}"></i> ${paused ? 'Reanudar' : 'Pausa'} <kbd>espacio</kbd>`;
+  lucide.createIcons({ nodes: [btn] });
+}
+
+// Corazón pixel-art en grilla 9×8: L = brillo, X = base, D = sombra
+const HEART_GRID = [
+  '.LL...XX.',
+  'LLXX.XXXX',
+  'LXXXXXXXX',
+  'XXXXXXXXX',
+  '.XXXXXXD.',
+  '..XXXXD..',
+  '...XXD...',
+  '....D....',
+];
+const HEART_COLORS = {
+  full: { L: '#ff9db0', X: '#ff2e55', D: '#b3123a' },
+  lost: { L: '#4a5c73', X: '#33435a', D: '#232f41' },
+};
+function pixelHeart(lost) {
+  const pal = HEART_COLORS[lost ? 'lost' : 'full'];
+  let rects = '';
+  HEART_GRID.forEach((row, y) => [...row].forEach((c, x) => {
+    if (c !== '.') rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${pal[c]}"/>`;
+  }));
+  return `<svg viewBox="0 0 9 8" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+}
 function heartsHTML(side) {
-  return [0, 1, 2].map(k =>
-    `<span class="ar-heart ${k >= S.hearts[side] ? 'is-lost' : ''}">${k >= S.hearts[side] ? '🖤' : '❤️'}</span>`
-  ).join('');
+  return [0, 1, 2].map(k => {
+    const lost = k >= S.hearts[side];
+    return `<span class="ar-heart ${lost ? 'is-lost' : ''}">${pixelHeart(lost)}</span>`;
+  }).join('');
 }
 function renderHearts(side, shake = false) {
   const el = $(`#ph-fight .ar-f-hearts[data-side="${side}"]`);
@@ -355,14 +447,14 @@ function resumeTimer() {
   endAt = S.sudden ? Date.now() - S.remain * 1000 : Date.now() + S.remain * 1000;
   clearInterval(tickHandle);
   tickHandle = setInterval(onTick, 200);
-  $('#ar-pause').textContent = 'Pausa (Espacio)';
+  setPauseBtn(false);
 }
 function pauseTimer() {
   S.running = false;
   clearInterval(tickHandle);
 }
 function setPaused(paused) {
-  if (paused) { pauseTimer(); $('#ar-pause').textContent = 'Reanudar (Espacio)'; }
+  if (paused) { pauseTimer(); setPauseBtn(true); }
   else resumeTimer();
 }
 
@@ -445,12 +537,13 @@ function showVictory() {
         <button class="ar-btn ar-btn--ghost" id="ar-v-discard">Descartar</button>
         <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-v-confirm">Confirmar resultado</button>
       </div>
+      <div class="ar-led ar-v-led">EIRI</div>
     </div>`;
   spawnConfetti();
   if (W.anthem) playAnthem(W.anthem, { fade: true }); else FX.fanfare();
   $('#ar-v-confirm').addEventListener('click', confirmResult);
-  $('#ar-v-discard').addEventListener('click', () => {
-    if (!window.confirm('¿Descartar el resultado? No se guardará nada.')) return;
+  $('#ar-v-discard').addEventListener('click', async () => {
+    if (!(await arModal('¿Descartar el resultado? No se guardará nada.', { okText: 'Sí, descartar', cancelText: 'Volver' }))) return;
     stopAnthem(); clearBackup(); setPhase('select');
   });
   lucide.createIcons({ nodes: [$('#ph-victory')] });
@@ -513,7 +606,7 @@ function spawnSparks() {
 
 // Teclado del combate
 document.addEventListener('keydown', (e) => {
-  if (S.phase !== 'fight' || S.winner) return;
+  if (modalOpen || S.phase !== 'fight' || S.winner) return;
   if (inCountdown) return;   // durante 3-2-1-¡PELEA! no se admiten corazones ni pausa
   const k = e.key.toLowerCase();
   if (k === 'q') loseHeart('a');
@@ -536,6 +629,7 @@ function toggleFullscreen() {
   else document.documentElement.requestFullscreen().catch(() => {});
 }
 document.addEventListener('keydown', (e) => {
+  if (modalOpen || e.ctrlKey || e.metaKey || e.altKey) return;   // no interceptar Ctrl+F, etc.
   if (e.key === 'f' || e.key === 'F') toggleFullscreen();
   if (e.key === 'm' || e.key === 'M') $('#ar-mute').click();
 });

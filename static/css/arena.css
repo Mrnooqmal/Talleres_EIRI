@@ -187,3 +187,70 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
   0% { transform: translateY(-20px) rotate(0deg); }
   100% { transform: translateY(105vh) rotate(720deg); }
 }
+
+/* ══ Pulido visual: bracket espejado, corazones pixel, LED EIRI, modal propio ══ */
+
+/* Botones: ícono + texto siempre alineados (Volver / Detener música / etc.) */
+.ar-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; line-height: 1; }
+.ar-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.ar-btn kbd {
+  font-family: var(--f-mono); font-size: 0.56rem; letter-spacing: 0.06em;
+  padding: 0.16rem 0.4rem; border: 1px solid var(--border-md); border-radius: 4px;
+  color: var(--text-dim); background: rgba(255,255,255,0.04); text-transform: uppercase;
+}
+.ar-btn--ctl { min-width: 230px; }
+
+/* Bracket espejado: ambos lados convergen a la final al centro (como la home) */
+.ar-bk-scroll { overflow-x: auto; padding-bottom: 0.5rem; }
+.ar-bk { display: flex; gap: 1.1rem; align-items: stretch; min-height: 400px; min-width: 700px; margin-top: 0.4rem; }
+.ar-bk-side { display: flex; gap: 1.1rem; min-width: 0; }
+.ar-bk-round { flex: 1; display: flex; flex-direction: column; min-width: 168px; }
+.ar-bk-matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 0.7rem; }
+.ar-bk-center { min-width: 190px; }
+.ar-bk-center .ar-sel-card { border-width: 1px; }
+.ar-sel-round-title--final { color: var(--gold-400); }
+.ar-sel-round-title--third { color: #cd7f32; }
+.ar-bk-third { margin-top: 1rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); }
+
+/* Timer de combate configurable: chip con ícono */
+.ar-timer-cfg {
+  border: 1px solid var(--border); border-radius: 12px; padding: 0.65rem 1.1rem;
+  width: max-content; background: rgba(13,22,37,0.6);
+}
+.ar-timer-cfg > svg { width: 16px; height: 16px; color: var(--gold-300); }
+
+/* Corazones pixel-art */
+.ar-heart svg { display: block; width: clamp(40px, 4.8vw, 64px); height: auto; filter: drop-shadow(0 4px 10px rgba(255,46,85,0.35)); }
+.ar-heart.is-lost svg { filter: none; }
+.ar-heart.is-lost { opacity: 0.6; }
+.ar-f-hearts { gap: 0.7rem; }
+
+/* LED EIRI: letrero tipo neón (azul eléctrico del sitio) con parpadeo sutil */
+.ar-led {
+  font-family: var(--f-display); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.45em; color: #8ed4ff;
+  text-shadow: 0 0 6px rgba(66,165,245,0.95), 0 0 18px rgba(66,165,245,0.55), 0 0 42px rgba(66,165,245,0.3);
+  animation: arLed 5.2s linear infinite;
+}
+@keyframes arLed {
+  0%, 89%, 92%, 96%, 100% { opacity: 1; }
+  90% { opacity: 0.55; }
+  94% { opacity: 0.75; }
+}
+.ar-f-brand { font-size: clamp(0.66rem, 1.3vw, 0.95rem); margin-bottom: -0.4rem; }
+.ar-v-led { margin-top: 1.1rem; font-size: 0.78rem; opacity: 0.92; }
+
+/* Modal propio (reemplaza confirm/alert del navegador) */
+.ar-modal {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(3,7,14,0.78); backdrop-filter: blur(3px);
+}
+.ar-modal-box {
+  background: #0b1526; border: 1px solid var(--border-md); border-radius: 14px;
+  padding: 1.7rem 1.9rem; max-width: 440px; margin: 1rem; text-align: center;
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,0.95);
+  animation: arPop 0.22s var(--ease-out);
+}
+.ar-modal-box p { color: var(--text); font-size: 1.02rem; line-height: 1.5; margin-bottom: 1.3rem; }
+.ar-modal-actions { display: flex; gap: 0.8rem; justify-content: center; }
