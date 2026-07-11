@@ -235,10 +235,206 @@ function startIntro() {
   lucide.createIcons({ nodes: [$('#ph-intro')] });
 }
 
-function startFight() { console.log('fight pendiente'); }   // Task 8 lo reemplaza
+// ─── Fase ③: combate ─────────────────────────────────
+let tickHandle = null, endAt = 0;
 
-// Placeholders que la Task 8 reemplaza:
-function resumeFight(backup) { console.log('resume pendiente', backup); }
+function startFight() {
+  S.hearts = { a: 3, b: 3 };
+  S.remain = S.duration;
+  S.sudden = false;
+  S.winner = null;
+  renderFight();
+  runCountdown(() => { FX.go(); resumeTimer(); saveBackup(); });
+}
+
+function resumeFight(backup) {
+  S.sel = backup.sel;
+  S.duration = backup.duration;
+  S.hearts = backup.hearts;
+  S.remain = backup.remain;
+  S.sudden = backup.sudden;
+  S.winner = null;
+  renderFight();
+  setPaused(true);   // se reanuda con Espacio o el botón
+}
+
+function renderFight() {
+  const m = matchOf(S.sel);
+  const A = team(m.a), B = team(m.b);
+  setPhase('fight');
+  const side = (t, key) => `
+    <div class="ar-f-side" id="ar-f-${key}">
+      ${t.logo ? `<img src="${esc(t.logo)}" class="ar-f-logo" alt="">`
+               : `<span class="ar-f-logo ar-f-logo--ph">${esc(t.name[0])}</span>`}
+      <h2 class="ar-f-name">${esc(t.name)}</h2>
+      <div class="ar-f-hearts" data-side="${key}">${heartsHTML(key)}</div>
+      <div class="ar-f-keys">${key === 'a' ? 'Q quita · A devuelve' : 'P quita · L devuelve'}</div>
+    </div>`;
+  $('#ph-fight').innerHTML = `
+    <div class="ar-f">
+      <div class="ar-f-round">${roundLabel(S.sel)}</div>
+      <div class="ar-f-stage">
+        ${side(A, 'a')}
+        <div class="ar-f-center">
+          <div class="ar-f-clock" id="ar-clock">${fmtClock(S.remain)}</div>
+          <div class="ar-f-sudden-label" id="ar-sudden-label" hidden>MUERTE SÚBITA</div>
+          <button class="ar-btn ar-btn--ghost" id="ar-pause">Pausa (Espacio)</button>
+          <button class="ar-btn ar-btn--ghost" id="ar-abort">Cancelar combate</button>
+        </div>
+        ${side(B, 'b')}
+      </div>
+      <div class="ar-f-countdown" id="ar-countdown" hidden></div>
+    </div>`;
+  $('#ph-fight').querySelectorAll('.ar-f-hearts').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const h = e.target.closest('.ar-heart');
+      if (!h) return;
+      const side = el.dataset.side;
+      if (h.classList.contains('is-lost')) giveHeart(side); else loseHeart(side);
+    });
+  });
+  if (isFinal(S.sel)) spawnSparks();
+  $('#ar-pause').addEventListener('click', () => setPaused(S.running));
+  $('#ar-abort').addEventListener('click', () => {
+    if (!window.confirm('¿Cancelar este combate? No se guardará nada.')) return;
+    pauseTimer(); clearBackup(); stopAnthem(); setPhase('select');
+  });
+  refreshSuddenUI();
+}
+
+function heartsHTML(side) {
+  return [0, 1, 2].map(k =>
+    `<span class="ar-heart ${k >= S.hearts[side] ? 'is-lost' : ''}">${k >= S.hearts[side] ? '🖤' : '❤️'}</span>`
+  ).join('');
+}
+function renderHearts(side, shake = false) {
+  const el = $(`#ph-fight .ar-f-hearts[data-side="${side}"]`);
+  el.innerHTML = heartsHTML(side);
+  if (shake) {
+    const box = $(`#ar-f-${side}`);
+    box.classList.remove('is-hit'); void box.offsetWidth;   // reinicia la animación
+    box.classList.add('is-hit');
+  }
+}
+
+function runCountdown(done) {
+  const el = $('#ar-countdown');
+  el.hidden = false;
+  const seq = ['3', '2', '1', '¡PELEA!'];
+  let k = 0;
+  const step = () => {
+    if (k < 3) FX.beep();
+    el.textContent = seq[k];
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    k++;
+    if (k < seq.length) setTimeout(step, 900);
+    else setTimeout(() => { el.hidden = true; done(); }, 700);
+  };
+  step();
+}
+
+// Timer sin deriva: recalcula contra Date.now() en cada tick.
+function resumeTimer() {
+  S.running = true;
+  endAt = S.sudden ? Date.now() - S.remain * 1000 : Date.now() + S.remain * 1000;
+  clearInterval(tickHandle);
+  tickHandle = setInterval(onTick, 200);
+  $('#ar-pause').textContent = 'Pausa (Espacio)';
+}
+function pauseTimer() {
+  S.running = false;
+  clearInterval(tickHandle);
+}
+function setPaused(paused) {
+  if (paused) { pauseTimer(); $('#ar-pause').textContent = 'Reanudar (Espacio)'; }
+  else resumeTimer();
+}
+
+function onTick() {
+  if (S.sudden) {
+    const t = Math.floor((Date.now() - endAt) / 1000);
+    if (t !== S.remain) { S.remain = t; updateClock(); saveBackup(); }
+    return;
+  }
+  const left = Math.ceil((endAt - Date.now()) / 1000);
+  if (left !== S.remain) {
+    S.remain = Math.max(0, left);
+    if (S.remain <= 10 && S.remain > 0) FX.tick();
+    updateClock();
+    saveBackup();
+    if (S.remain === 0) onTimeUp();
+  }
+}
+function updateClock() {
+  const el = $('#ar-clock');
+  el.textContent = fmtClock(S.remain);
+  el.classList.toggle('is-low', !S.sudden && S.remain <= 10);
+}
+
+function loseHeart(side) {
+  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 0) return;
+  S.hearts[side]--;
+  FX.hit();
+  renderHearts(side, true);
+  saveBackup();
+  const other = side === 'a' ? 'b' : 'a';
+  if (S.hearts[side] === 0 || S.sudden) endFight(other);
+}
+function giveHeart(side) {
+  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 3) return;
+  S.hearts[side]++;
+  renderHearts(side);
+  saveBackup();
+}
+
+function onTimeUp() {
+  pauseTimer();
+  if (S.hearts.a !== S.hearts.b) return endFight(S.hearts.a > S.hearts.b ? 'a' : 'b');
+  // Empate → muerte súbita: el próximo corazón decide, el reloj sube desde 0.
+  S.sudden = true;
+  S.remain = 0;
+  FX.alarm();
+  refreshSuddenUI();
+  resumeTimer();
+  saveBackup();
+}
+function refreshSuddenUI() {
+  document.body.classList.toggle('is-sudden', S.sudden);
+  const lbl = $('#ar-sudden-label');
+  if (lbl) lbl.hidden = !S.sudden;
+}
+
+function endFight(winner) {
+  pauseTimer();
+  S.winner = winner;
+  document.body.classList.remove('is-sudden');
+  showVictory();
+}
+function showVictory() { console.log('victoria pendiente', S.winner); }   // Task 9
+
+// Partículas doradas flotando durante la GRAN FINAL
+function spawnSparks() {
+  const box = document.createElement('div');
+  box.className = 'ar-f-sparks';
+  for (let k = 0; k < 26; k++) {
+    const p = document.createElement('i');
+    p.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 100}%;` +
+      `animation-delay:${Math.random() * 6}s;animation-duration:${5 + Math.random() * 6}s;`;
+    box.appendChild(p);
+  }
+  $('.ar-f').appendChild(box);
+}
+
+// Teclado del combate
+document.addEventListener('keydown', (e) => {
+  if (S.phase !== 'fight' || S.winner) return;
+  const k = e.key.toLowerCase();
+  if (k === 'q') loseHeart('a');
+  if (k === 'a') giveHeart('a');
+  if (k === 'p') loseHeart('b');
+  if (k === 'l') giveHeart('b');
+  if (e.code === 'Space') { e.preventDefault(); setPaused(S.running); }
+});
 
 // ─── Controles globales ──────────────────────────────
 $('#ar-mute').addEventListener('click', () => {

@@ -109,3 +109,60 @@
 @keyframes arFromRight { from { opacity: 0; transform: translateX(80px); }  to { opacity: 1; transform: none; } }
 @keyframes arPop  { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
 @keyframes arDrop { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: none; } }
+
+/* Combate */
+.ar-f { display: flex; flex-direction: column; align-items: center; min-height: calc(100vh - 130px); justify-content: center; gap: 1.6rem; position: relative; }
+.ar-f-round { font-family: var(--f-display); font-size: clamp(1rem, 2.4vw, 1.7rem); letter-spacing: 0.35em; color: var(--gold-300); text-transform: uppercase; }
+.ar-f-stage { display: grid; grid-template-columns: 1fr auto 1fr; gap: 3rem; align-items: center; width: 100%; max-width: 1200px; }
+.ar-f-side { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; padding: 1.4rem; border-radius: 18px; transition: background 0.2s; }
+.ar-f-side.is-hit { animation: arHit 0.45s var(--ease-out); }
+@keyframes arHit {
+  0% { background: rgba(239,68,68,0.35); transform: translateX(0); }
+  25% { transform: translateX(-9px); } 50% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); } 100% { background: transparent; transform: none; }
+}
+.ar-f-logo { width: clamp(110px, 15vw, 190px); height: clamp(110px, 15vw, 190px); border-radius: 20px; object-fit: cover; background: var(--bg-2); }
+.ar-f-logo--ph { display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-size: 3.4rem; color: var(--gold-300); border: 2px solid var(--border-md); }
+.ar-f-name { font-family: var(--f-display); font-size: clamp(1.1rem, 2.2vw, 1.7rem); color: #fff; text-align: center; }
+.ar-f-hearts { display: flex; gap: 0.5rem; font-size: clamp(1.8rem, 3.5vw, 2.8rem); cursor: pointer; user-select: none; }
+.ar-heart { transition: transform 0.15s; }
+.ar-heart:hover { transform: scale(1.2); }
+.ar-heart.is-lost { opacity: 0.45; filter: grayscale(0.6); }
+.ar-f-keys { font-family: var(--f-mono); font-size: 0.6rem; letter-spacing: 0.14em; color: var(--text-dim); opacity: 0.7; }
+.ar-f-center { display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+.ar-f-clock {
+  font-family: var(--f-mono); font-weight: 700; font-size: clamp(3.4rem, 9vw, 7rem);
+  color: #fff; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.ar-f-clock.is-low { color: #ef4444; animation: arPulse 1s infinite; }
+@keyframes arPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+.ar-f-sudden-label {
+  font-family: var(--f-display); font-weight: 900; letter-spacing: 0.3em;
+  color: #ef4444; font-size: clamp(1rem, 2.5vw, 1.6rem);
+  animation: arPulse 0.8s infinite;
+}
+.ar-f-countdown {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(3,7,14,0.82); z-index: 40;
+  font-family: var(--f-display); font-weight: 900; font-size: clamp(6rem, 20vw, 15rem); color: var(--gold-300);
+}
+.ar-f-countdown.pop { animation: arPop 0.4s var(--ease-out); }
+
+/* Modo muerte súbita: toda la pantalla vira a rojo */
+body.is-sudden .arena { background: radial-gradient(ellipse at center, rgba(90,8,8,0.55), transparent 75%); }
+body.is-sudden .ar-f-clock { color: #ef4444; }
+
+/* La GRAN FINAL lleva marco dorado y partículas flotando */
+body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radius: 24px; box-shadow: 0 0 60px -25px var(--gold-glow), inset 0 0 60px -40px var(--gold-glow); padding: 1.5rem; }
+.ar-f-sparks { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.ar-f-sparks i {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--gold-300); opacity: 0;
+  box-shadow: 0 0 8px 2px var(--gold-glow);
+  animation-name: arSpark; animation-iteration-count: infinite; animation-timing-function: ease-in-out;
+}
+@keyframes arSpark {
+  0%, 100% { opacity: 0; transform: translateY(0); }
+  20%, 80% { opacity: 0.85; }
+  50% { transform: translateY(-60px); }
+}
