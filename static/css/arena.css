@@ -275,3 +275,40 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
 /* La animación de entrada (fill both) pisaría el spotlight: se apaga al activar uno */
 .ar-vs-stage.is-spot-left .ar-vs-side,
 .ar-vs-stage.is-spot-right .ar-vs-side { animation: none; }
+
+/* ══ Bracket de selección grande: logo arriba, nombre debajo, marcador central ══ */
+.ar-bk { min-height: 480px; min-width: 960px; gap: 1.3rem; }
+.ar-bk-round { min-width: 230px; }
+.ar-bk-center { min-width: 250px; }
+.ar-sel-card {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 0.35rem; padding: 1rem 0.55rem;
+}
+.ar-sc-team { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; min-width: 0; }
+.ar-sc-logo {
+  width: clamp(56px, 5.2vw, 80px); height: clamp(56px, 5.2vw, 80px);
+  border-radius: 14px; object-fit: cover; background: var(--bg-2); flex-shrink: 0;
+}
+.ar-sc-logo--ph {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-display); font-size: 1.6rem; color: var(--gold-300);
+  border: 1px solid var(--border); text-transform: uppercase;
+}
+.ar-sc-name {
+  font-size: 0.8rem; font-weight: 600; color: var(--text); text-align: center;
+  max-width: 100%; overflow: hidden; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25;
+}
+.ar-sc-team.is-won .ar-sc-name { color: var(--gold-300); }
+.ar-sc-team.is-won .ar-sc-logo { border: 2px solid rgba(227,189,63,0.65); box-shadow: 0 0 22px -6px var(--gold-glow); }
+.ar-sc-team.is-lost { opacity: 0.4; filter: grayscale(0.5); }
+.ar-sc-score {
+  font-family: var(--f-mono); font-size: clamp(1.1rem, 1.6vw, 1.5rem); font-weight: 700;
+  color: #fff; white-space: nowrap;
+}
+.ar-sc-score i { font-style: normal; color: var(--text-dim); padding: 0 0.15rem; }
+.ar-sc-vs {
+  font-family: var(--f-display); font-size: 0.85rem; font-weight: 700;
+  color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em;
+}
+.ar-sel-card.is-playable .ar-sc-vs { color: var(--gold-400); }

@@ -53,6 +53,7 @@ const FX = {
   beep()    { this.tone(880, 0.12); },
   go()      { this.tone(440, 0.55, 'sawtooth', 0.22); this.tone(880, 0.55, 'square', 0.1); },
   hit()     { this.tone(120, 0.35, 'sawtooth', 0.3); this.tone(75, 0.5, 'triangle', 0.25, 0.04); },
+  heal()    { this.tone(520, 0.12, 'triangle', 0.18); this.tone(784, 0.18, 'triangle', 0.16, 0.09); },
   tick()    { this.tone(1250, 0.05, 'square', 0.06); },
   alarm()   { for (let k = 0; k < 6; k++) this.tone(k % 2 ? 920 : 660, 0.16, 'square', 0.2, k * 0.18); },
   fanfare() { [523, 659, 784, 1047, 1319].forEach((f, k) => this.tone(f, 0.42, 'triangle', 0.2, k * 0.16)); },
@@ -108,21 +109,27 @@ async function loadBracket() {
 // ─── Fase ①: selección de partido ────────────────────
 const playable = (m) => m && m.a != null && m.b != null && !m.winner;
 
+// Tarjeta de partido: logo grande arriba y nombre debajo por equipo,
+// con el marcador (o "VS") al centro — legible proyectado y de lejos.
 function selCard(m, sel) {
-  const rowHTML = (id, score, won) => {
+  const cell = (id, won, lost) => {
     const t = team(id);
-    return `<div class="ar-sel-row ${won ? 'is-won' : ''}">
-      ${t?.logo ? `<img src="${esc(t.logo)}" class="ar-sel-logo" alt="">`
-                : `<span class="ar-sel-logo ar-sel-logo--ph">${t ? esc(t.name[0]) : '·'}</span>`}
-      <span class="ar-sel-name">${t ? esc(t.name) : 'Por definir'}</span>
-      <span class="ar-sel-score">${esc(score)}</span>
+    const logo = t?.logo ? `<img src="${esc(t.logo)}" class="ar-sc-logo" alt="">`
+      : `<span class="ar-sc-logo ar-sc-logo--ph">${t ? esc(t.name[0]) : '·'}</span>`;
+    return `<div class="ar-sc-team ${won ? 'is-won' : ''} ${lost ? 'is-lost' : ''}">
+      ${logo}<span class="ar-sc-name">${t ? esc(t.name) : 'Por definir'}</span>
     </div>`;
   };
+  const decided = m.winner === 'a' || m.winner === 'b';
+  const center = decided
+    ? `<span class="ar-sc-score">${esc(m.scoreA)}<i>–</i>${esc(m.scoreB)}</span>`
+    : `<span class="ar-sc-vs">vs</span>`;
   const canPlay = playable(m);
   const attr = canPlay ? `data-sel='${JSON.stringify(sel)}'` : '';
-  return `<div class="ar-sel-card ${canPlay ? 'is-playable' : ''} ${m.winner ? 'is-done' : ''}" ${attr}>
-    ${rowHTML(m.a, m.scoreA, m.winner === 'a')}
-    ${rowHTML(m.b, m.scoreB, m.winner === 'b')}
+  return `<div class="ar-sel-card ${canPlay ? 'is-playable' : ''} ${decided ? 'is-done' : ''}" ${attr}>
+    ${cell(m.a, m.winner === 'a', decided && m.winner !== 'a')}
+    ${center}
+    ${cell(m.b, m.winner === 'b', decided && m.winner !== 'b')}
   </div>`;
 }
 
@@ -293,6 +300,8 @@ function startIntro() {
   };
   $('#ph-intro').querySelectorAll('.ar-anthem-btn').forEach(b =>
     b.addEventListener('click', () => {
+      // Segundo click sobre el tema que ya suena: lo detiene (toggle)
+      if (b.classList.contains('is-playing')) { stopAnthem(); clearSpot(); return; }
       playAnthem(b.dataset.url);
       clearSpot();
       $('#ph-intro .ar-vs-stage').classList.add(b.dataset.side === 'left' ? 'is-spot-left' : 'is-spot-right');
@@ -510,6 +519,7 @@ function loseHeart(side) {
 function giveHeart(side) {
   if (S.phase !== 'fight' || S.winner || S.hearts[side] === 3 || inCountdown) return;
   S.hearts[side]++;
+  FX.heal();
   renderHearts(side);
   saveBackup();
 }
