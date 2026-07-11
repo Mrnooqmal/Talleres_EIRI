@@ -315,3 +315,48 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
 
 /* Botón de presentación automática activo */
 .ar-btn.is-on { border-color: var(--gold-400); color: var(--gold-300); box-shadow: 0 0 14px -6px var(--gold-glow); }
+
+/* ══ Bracket a pantalla completa + resultados como desplegable horizontal ══ */
+.ar-sel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+.ar-sel-head .ar-timer-cfg { margin-top: 0.2rem; }
+
+/* Un poco más grande todo: el bracket ahora ocupa el ancho completo */
+.ar-bk { min-height: 540px; min-width: 1100px; gap: 1.5rem; }
+.ar-bk-side { gap: 1.5rem; }
+.ar-bk-round { min-width: 260px; }
+.ar-bk-center { min-width: 280px; }
+.ar-sel-round-title, .ar-sel-round-title--final, .ar-sel-round-title--third { font-size: 0.7rem; }
+.ar-sc-logo { width: clamp(64px, 6vw, 96px); height: clamp(64px, 6vw, 96px); border-radius: 16px; }
+.ar-sc-logo--ph { font-size: 1.9rem; }
+.ar-sc-name { font-size: 0.92rem; }
+.ar-sc-score { font-size: clamp(1.25rem, 1.9vw, 1.7rem); }
+.ar-sel-card { padding: 1.15rem 0.6rem; }
+
+/* Desplegable de resultados */
+.ar-results { margin-top: 1.2rem; }
+.ar-results-toggle {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--text-dim); background: rgba(13,22,37,0.6);
+  border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 1rem; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.ar-results-toggle:hover { border-color: var(--gold-400); color: var(--gold-300); }
+.ar-results-toggle svg { width: 14px; height: 14px; }
+.ar-res-count {
+  font-family: var(--f-mono); font-size: 0.62rem; font-weight: 700;
+  color: var(--gold-300); background: rgba(227,189,63,0.12);
+  border-radius: 20px; padding: 0.12rem 0.5rem;
+}
+.ar-res-chev { transition: transform 0.25s var(--ease-out); }
+.ar-results-toggle.is-open .ar-res-chev { transform: rotate(180deg); }
+.ar-results-strip {
+  display: flex; gap: 0.8rem; overflow-x: auto;
+  padding: 0.9rem 0.2rem 0.5rem; align-items: stretch;
+}
+.ar-results-strip .ar-side-item {
+  flex: 0 0 auto; min-width: 230px; max-width: 300px;
+  border: 1px solid var(--border); border-radius: 10px; border-bottom: 1px solid var(--border);
+  padding: 0.6rem 0.9rem; background: rgba(8,16,30,0.8);
+}
+.ar-results-strip .ar-side-empty { padding: 0.6rem 0.2rem; }

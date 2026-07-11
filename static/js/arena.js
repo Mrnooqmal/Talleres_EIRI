@@ -193,11 +193,12 @@ function renderSelect() {
         <button class="ar-btn ar-btn--gold" id="ar-resume-btn">Reanudar combate</button>
         <button class="ar-btn ar-btn--ghost" id="ar-resume-discard">Descartar</button>
       </div>` : ''}
-    <div class="ar-sel-layout">
-      <div class="ar-sel-main">
-        <h1 class="ar-title">${esc(b.title)}</h1>
-        <p class="ar-sub">Elige el próximo combate. Los partidos listos brillan en dorado</p>
-        ${bracketHTML}
+    <div class="ar-sel-main">
+      <div class="ar-sel-head">
+        <div>
+          <h1 class="ar-title">${esc(b.title)}</h1>
+          <p class="ar-sub">Elige el próximo combate. Los partidos listos brillan en dorado</p>
+        </div>
         <div class="ar-timer-cfg">
           <i data-lucide="timer"></i>
           <span>Duración del combate</span>
@@ -206,10 +207,15 @@ function renderSelect() {
           <button class="ar-icon-btn" id="ar-dur-plus" title="+30s"><i data-lucide="plus"></i></button>
         </div>
       </div>
-      <aside class="ar-side">
-        <h2 class="ar-side-title">Resultados de la jornada</h2>
-        ${resultsSidebar()}
-      </aside>
+      ${bracketHTML}
+      <div class="ar-results">
+        <button class="ar-results-toggle" id="ar-res-toggle">
+          <i data-lucide="trophy"></i> Resultados de la jornada
+          <span class="ar-res-count">${resultsCount()}</span>
+          <i data-lucide="chevron-down" class="ar-res-chev"></i>
+        </button>
+        <div class="ar-results-strip" id="ar-res-strip" hidden>${resultsSidebar()}</div>
+      </div>
     </div>`;
 
   el.querySelectorAll('.ar-sel-card.is-playable').forEach(card => {
@@ -222,7 +228,23 @@ function renderSelect() {
   $('#ar-dur-plus')?.addEventListener('click', () => { S.duration = Math.min(1200, S.duration + 30); $('#ar-dur').textContent = fmtClock(S.duration); });
   $('#ar-resume-btn')?.addEventListener('click', () => resumeFight(backup));
   $('#ar-resume-discard')?.addEventListener('click', () => { clearBackup(); renderSelect(); });
+  // Desplegable horizontal de resultados: recuerda si estaba abierto
+  const strip = $('#ar-res-strip');
+  const applyOpen = (open) => {
+    strip.hidden = !open;
+    $('#ar-res-toggle').classList.toggle('is-open', open);
+    localStorage.setItem('arena-results-open', open ? '1' : '');
+  };
+  applyOpen(localStorage.getItem('arena-results-open') === '1');
+  $('#ar-res-toggle').addEventListener('click', () => applyOpen(strip.hidden));
   lucide.createIcons({ nodes: [el] });
+}
+
+function resultsCount() {
+  let n = 0;
+  S.bracket.rounds.forEach(round => round.forEach(m => { if (m.winner) n++; }));
+  if (S.bracket.third?.winner) n++;
+  return n;
 }
 
 function fmtClock(s) {
