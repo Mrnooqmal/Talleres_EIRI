@@ -312,3 +312,6 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
   color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em;
 }
 .ar-sel-card.is-playable .ar-sc-vs { color: var(--gold-400); }
+
+/* Botón de presentación automática activo */
+.ar-btn.is-on { border-color: var(--gold-400); color: var(--gold-300); box-shadow: 0 0 14px -6px var(--gold-glow); }

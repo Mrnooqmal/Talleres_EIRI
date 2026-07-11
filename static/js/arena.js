@@ -196,7 +196,7 @@ function renderSelect() {
     <div class="ar-sel-layout">
       <div class="ar-sel-main">
         <h1 class="ar-title">${esc(b.title)}</h1>
-        <p class="ar-sub">Elige el próximo combate — los partidos listos brillan en dorado</p>
+        <p class="ar-sub">Elige el próximo combate. Los partidos listos brillan en dorado</p>
         ${bracketHTML}
         <div class="ar-timer-cfg">
           <i data-lucide="timer"></i>
@@ -284,6 +284,7 @@ function startIntro() {
       </div>
       <div class="ar-vs-actions">
         <button class="ar-btn ar-btn--ghost" id="ar-vs-back"><i data-lucide="arrow-left"></i> Volver</button>
+        <button class="ar-btn ar-btn--ghost" id="ar-vs-pres"><i data-lucide="sparkles"></i> Presentación automática</button>
         <button class="ar-btn ar-btn--ghost" id="ar-vs-stop"><i data-lucide="volume-x"></i> Detener música</button>
         <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-vs-go">¡A LA ARENA!</button>
       </div>
@@ -298,20 +299,63 @@ function startIntro() {
     });
     if ($('#ph-intro')) lucide.createIcons({ nodes: [$('#ph-intro')] });
   };
+  const spotlight = (dir, t) => {
+    clearSpot();
+    $('#ph-intro .ar-vs-stage')?.classList.add(dir === 'left' ? 'is-spot-left' : 'is-spot-right');
+    if (t.anthem) {
+      playAnthem(t.anthem);
+      const btn = $(`#ph-intro .ar-anthem-btn[data-side="${dir}"]`);
+      if (btn) {
+        btn.classList.add('is-playing');
+        btn.innerHTML = '<i data-lucide="volume-2"></i> Sonando…';
+        lucide.createIcons({ nodes: [btn] });
+      }
+    }
+  };
+
+  // Presentación automática estilo WWE: spotlight + tema del equipo 1,
+  // luego el equipo 2, y se apaga. Cancelable con el mismo botón o cualquier acción.
+  const PRES_MS = 12000;   // segundos de protagonismo por equipo
+  let presToken = 0;
+  const presWait = (ms) => new Promise(r => setTimeout(r, ms));
+  const cancelPres = () => {
+    presToken++;
+    const b = $('#ar-vs-pres');
+    if (b) {
+      b.classList.remove('is-on');
+      b.innerHTML = '<i data-lucide="sparkles"></i> Presentación automática';
+      lucide.createIcons({ nodes: [b] });
+    }
+  };
+  $('#ar-vs-pres').addEventListener('click', async () => {
+    const btn = $('#ar-vs-pres');
+    if (btn.classList.contains('is-on')) { cancelPres(); stopAnthem(); clearSpot(); return; }
+    const my = ++presToken;
+    anthem.onended = null;
+    btn.classList.add('is-on');
+    btn.innerHTML = '<i data-lucide="square"></i> Detener presentación';
+    lucide.createIcons({ nodes: [btn] });
+    spotlight('left', A);
+    await presWait(PRES_MS);
+    if (presToken !== my) return;
+    spotlight('right', B);
+    await presWait(PRES_MS);
+    if (presToken !== my) return;
+    stopAnthem();
+    clearSpot();
+    cancelPres();
+  });
+
   $('#ph-intro').querySelectorAll('.ar-anthem-btn').forEach(b =>
     b.addEventListener('click', () => {
+      cancelPres();   // un click manual corta la secuencia automática
       // Segundo click sobre el tema que ya suena: lo detiene (toggle)
       if (b.classList.contains('is-playing')) { stopAnthem(); clearSpot(); return; }
-      playAnthem(b.dataset.url);
-      clearSpot();
-      $('#ph-intro .ar-vs-stage').classList.add(b.dataset.side === 'left' ? 'is-spot-left' : 'is-spot-right');
-      b.classList.add('is-playing');
-      b.innerHTML = '<i data-lucide="volume-2"></i> Sonando…';
-      lucide.createIcons({ nodes: [b] });
+      spotlight(b.dataset.side, b.dataset.side === 'left' ? A : B);
       anthem.onended = clearSpot;   // al terminar la canción, el escenario vuelve solo
     }));
-  const leaveIntro = () => { stopAnthem(); anthem.onended = null; };
-  $('#ar-vs-stop').addEventListener('click', () => { stopAnthem(); clearSpot(); });
+  const leaveIntro = () => { cancelPres(); stopAnthem(); anthem.onended = null; };
+  $('#ar-vs-stop').addEventListener('click', () => { cancelPres(); stopAnthem(); clearSpot(); });
   $('#ar-vs-back').addEventListener('click', () => { leaveIntro(); setPhase('select'); });
   $('#ar-vs-go').addEventListener('click', () => { leaveIntro(); startFight(); });
   lucide.createIcons({ nodes: [$('#ph-intro')] });
