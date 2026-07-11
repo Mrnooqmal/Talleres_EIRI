@@ -83,3 +83,29 @@
   padding: 0.8rem 1.1rem; border: 1px solid rgba(227,189,63,0.5); border-radius: 10px;
   background: rgba(227,189,63,0.08); font-size: 0.88rem;
 }
+
+/* Presentación VS */
+.ar-vs { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 130px); gap: 2rem; }
+.ar-vs-round {
+  font-family: var(--f-display); font-size: clamp(1.2rem, 3vw, 2.2rem); font-weight: 700;
+  letter-spacing: 0.35em; color: var(--gold-300); text-transform: uppercase;
+  animation: arDrop 0.6s var(--ease-out) both;
+}
+.ar-vs-stage { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 3rem; width: 100%; max-width: 1100px; }
+.ar-vs-side { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.ar-vs-side--left  { animation: arFromLeft 0.7s var(--ease-out) both 0.15s; }
+.ar-vs-side--right { animation: arFromRight 0.7s var(--ease-out) both 0.15s; }
+.ar-vs-logo { width: clamp(120px, 18vw, 230px); height: clamp(120px, 18vw, 230px); border-radius: 22px; object-fit: cover; background: var(--bg-2); box-shadow: 0 20px 60px -20px rgba(0,0,0,0.9); }
+.ar-vs-logo--ph { display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-size: 4rem; color: var(--gold-300); border: 2px solid var(--border-md); }
+.ar-vs-name { font-family: var(--f-display); font-size: clamp(1.2rem, 2.6vw, 2rem); color: #fff; text-align: center; }
+.ar-vs-mark {
+  font-family: var(--f-display); font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 900;
+  color: var(--gold-400); text-shadow: 0 0 40px var(--gold-glow);
+  animation: arPop 0.5s var(--ease-out) both 0.5s;
+}
+.ar-vs-actions { display: flex; gap: 1rem; align-items: center; }
+.ar-btn--big { font-size: 1.15rem; padding: 0.9rem 2.4rem; letter-spacing: 0.08em; }
+@keyframes arFromLeft  { from { opacity: 0; transform: translateX(-80px); } to { opacity: 1; transform: none; } }
+@keyframes arFromRight { from { opacity: 0; transform: translateX(80px); }  to { opacity: 1; transform: none; } }
+@keyframes arPop  { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
+@keyframes arDrop { from { opacity: 0; transform: translateY(-24px); } to { opacity: 1; transform: none; } }

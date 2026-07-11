@@ -200,8 +200,44 @@ function fmtClock(s) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-// Placeholders que las Tasks 7-8 reemplazan:
-function startIntro() { setPhase('intro'); $('#ph-intro').innerHTML = '<p>intro pendiente</p>'; }
+// ─── Fase ②: presentación VS ─────────────────────────
+function startIntro() {
+  const m = matchOf(S.sel);
+  const A = team(m.a), B = team(m.b);
+  setPhase('intro');
+  const side = (t, dir) => `
+    <div class="ar-vs-side ar-vs-side--${dir}">
+      ${t.logo ? `<img src="${esc(t.logo)}" class="ar-vs-logo" alt="">`
+               : `<span class="ar-vs-logo ar-vs-logo--ph">${esc(t.name[0])}</span>`}
+      <h2 class="ar-vs-name">${esc(t.name)}</h2>
+      ${t.anthem ? `<button class="ar-btn ar-btn--ghost ar-anthem-btn" data-url="${esc(t.anthem)}">
+        <i data-lucide="music"></i> Tema</button>` : ''}
+    </div>`;
+  $('#ph-intro').innerHTML = `
+    <div class="ar-vs">
+      <div class="ar-vs-round">${roundLabel(S.sel)}</div>
+      <div class="ar-vs-stage">
+        ${side(A, 'left')}
+        <div class="ar-vs-mark">VS</div>
+        ${side(B, 'right')}
+      </div>
+      <div class="ar-vs-actions">
+        <button class="ar-btn ar-btn--ghost" id="ar-vs-back"><i data-lucide="arrow-left"></i> Volver</button>
+        <button class="ar-btn ar-btn--ghost" id="ar-vs-stop"><i data-lucide="square"></i> Detener música</button>
+        <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-vs-go">¡A LA ARENA!</button>
+      </div>
+    </div>`;
+  $('#ph-intro').querySelectorAll('.ar-anthem-btn').forEach(b =>
+    b.addEventListener('click', () => playAnthem(b.dataset.url)));
+  $('#ar-vs-stop').addEventListener('click', stopAnthem);
+  $('#ar-vs-back').addEventListener('click', () => { stopAnthem(); setPhase('select'); });
+  $('#ar-vs-go').addEventListener('click', () => { stopAnthem(); startFight(); });
+  lucide.createIcons({ nodes: [$('#ph-intro')] });
+}
+
+function startFight() { console.log('fight pendiente'); }   // Task 8 lo reemplaza
+
+// Placeholders que la Task 8 reemplaza:
 function resumeFight(backup) { console.log('resume pendiente', backup); }
 
 // ─── Controles globales ──────────────────────────────
