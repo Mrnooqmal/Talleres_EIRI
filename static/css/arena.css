@@ -146,6 +146,7 @@
   background: rgba(3,7,14,0.82); z-index: 40;
   font-family: var(--f-display); font-weight: 900; font-size: clamp(6rem, 20vw, 15rem); color: var(--gold-300);
 }
+.ar-f-countdown[hidden] { display: none; }  /* display:flex pisa [hidden] del UA; forzar ocultado */
 .ar-f-countdown.pop { animation: arPop 0.4s var(--ease-out); }
 
 /* Modo muerte súbita: toda la pantalla vira a rojo */
