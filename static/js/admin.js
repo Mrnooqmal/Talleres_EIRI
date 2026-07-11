@@ -2130,6 +2130,41 @@ document.getElementById('saveBracketBtn')?.addEventListener('click', async () =>
   }
 });
 
+// Guarda el bracket actual de bkState de inmediato (lo usan los resets del torneo)
+async function bkSaveNow(okMsg) {
+  const fb = document.getElementById('bracketFeedback');
+  try {
+    await api('PUT', '/api/admin/bracket', { size: bkState.size, rounds: bkState.rounds, third: bkState.third });
+    bkDirty = false;
+    if (fb) { fb.textContent = okMsg; fb.className = 'cfg-feedback ok'; }
+  } catch (e) {
+    if (fb) { fb.textContent = 'Error: ' + e.message; fb.className = 'cfg-feedback err'; }
+  }
+}
+
+// Reiniciar resultados: borra marcadores/ganadores de todas las rondas y del 3er
+// lugar, pero mantiene los equipos colocados en la primera ronda.
+document.getElementById('resetResultsBtn')?.addEventListener('click', () => {
+  confirm('Reiniciar resultados', '¿Borrar todos los marcadores y ganadores del torneo? Los equipos colocados en la primera ronda se mantienen.', async () => {
+    const firstRound = (bkState.rounds[0] || []).map(m => ({ a: m.a, b: m.b, scoreA: '', scoreB: '', winner: null }));
+    bkState.rounds = bkEmptyRounds(bkState.size);
+    bkState.rounds[0] = firstRound;
+    bkState.third = null;
+    await bkSaveNow('Resultados reiniciados — el torneo queda listo para jugarse de nuevo');
+    renderBracketAdmin();
+  });
+});
+
+// Vaciar llave: quita también los equipos colocados (llave en blanco)
+document.getElementById('clearBracketBtn')?.addEventListener('click', () => {
+  confirm('Vaciar llave', '¿Vaciar la llave por completo? Se quitan los equipos colocados y todos los resultados.', async () => {
+    bkState.rounds = bkEmptyRounds(bkState.size);
+    bkState.third = null;
+    await bkSaveNow('Llave vaciada');
+    renderBracketAdmin();
+  });
+});
+
 // Global expose for inline onclick
 Object.assign(window, {
   editSession, deleteSession, addProject, editProject, deleteProject,

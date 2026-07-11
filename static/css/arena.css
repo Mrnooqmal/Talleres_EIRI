@@ -254,3 +254,24 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
 }
 .ar-modal-box p { color: var(--text); font-size: 1.02rem; line-height: 1.5; margin-bottom: 1.3rem; }
 .ar-modal-actions { display: flex; gap: 0.8rem; justify-content: center; }
+
+/* Spotlight de presentación: al sonar el tema de un equipo se realza su lado */
+.ar-vs-side, .ar-vs-mark { transition: opacity 0.45s var(--ease-out), filter 0.45s ease, transform 0.5s var(--ease-out); }
+.ar-vs-stage.is-spot-left  .ar-vs-side--left,
+.ar-vs-stage.is-spot-right .ar-vs-side--right { transform: scale(1.07); }
+.ar-vs-stage.is-spot-left  .ar-vs-side--left .ar-vs-logo,
+.ar-vs-stage.is-spot-right .ar-vs-side--right .ar-vs-logo {
+  box-shadow: 0 0 75px -10px var(--gold-glow), 0 20px 60px -20px rgba(0,0,0,0.9);
+}
+.ar-vs-stage.is-spot-left  .ar-vs-side--left .ar-vs-name,
+.ar-vs-stage.is-spot-right .ar-vs-side--right .ar-vs-name {
+  color: var(--gold-300); text-shadow: 0 0 26px var(--gold-glow);
+}
+.ar-vs-stage.is-spot-left  .ar-vs-side--right,
+.ar-vs-stage.is-spot-right .ar-vs-side--left,
+.ar-vs-stage.is-spot-left  .ar-vs-mark,
+.ar-vs-stage.is-spot-right .ar-vs-mark { opacity: 0.22; filter: grayscale(0.6) blur(1px); }
+.ar-anthem-btn.is-playing { border-color: var(--gold-400); color: var(--gold-300); }
+/* La animación de entrada (fill both) pisaría el spotlight: se apaga al activar uno */
+.ar-vs-stage.is-spot-left .ar-vs-side,
+.ar-vs-stage.is-spot-right .ar-vs-side { animation: none; }

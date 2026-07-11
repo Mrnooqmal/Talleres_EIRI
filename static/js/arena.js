@@ -264,7 +264,7 @@ function startIntro() {
       ${t.logo ? `<img src="${esc(t.logo)}" class="ar-vs-logo" alt="">`
                : `<span class="ar-vs-logo ar-vs-logo--ph">${esc(t.name[0])}</span>`}
       <h2 class="ar-vs-name">${esc(t.name)}</h2>
-      ${t.anthem ? `<button class="ar-btn ar-btn--ghost ar-anthem-btn" data-url="${esc(t.anthem)}">
+      ${t.anthem ? `<button class="ar-btn ar-btn--ghost ar-anthem-btn" data-url="${esc(t.anthem)}" data-side="${dir}">
         <i data-lucide="music"></i> Tema</button>` : ''}
     </div>`;
   $('#ph-intro').innerHTML = `
@@ -281,11 +281,30 @@ function startIntro() {
         <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-vs-go">¡A LA ARENA!</button>
       </div>
     </div>`;
+  // Spotlight de entrada: al sonar el tema de un equipo se realza su lado
+  // (nombre y logo) y el rival se atenúa; al parar o terminar el tema, vuelve.
+  const clearSpot = () => {
+    $('#ph-intro .ar-vs-stage')?.classList.remove('is-spot-left', 'is-spot-right');
+    $('#ph-intro')?.querySelectorAll('.ar-anthem-btn').forEach(b => {
+      b.classList.remove('is-playing');
+      b.innerHTML = '<i data-lucide="music"></i> Tema';
+    });
+    if ($('#ph-intro')) lucide.createIcons({ nodes: [$('#ph-intro')] });
+  };
   $('#ph-intro').querySelectorAll('.ar-anthem-btn').forEach(b =>
-    b.addEventListener('click', () => playAnthem(b.dataset.url)));
-  $('#ar-vs-stop').addEventListener('click', stopAnthem);
-  $('#ar-vs-back').addEventListener('click', () => { stopAnthem(); setPhase('select'); });
-  $('#ar-vs-go').addEventListener('click', () => { stopAnthem(); startFight(); });
+    b.addEventListener('click', () => {
+      playAnthem(b.dataset.url);
+      clearSpot();
+      $('#ph-intro .ar-vs-stage').classList.add(b.dataset.side === 'left' ? 'is-spot-left' : 'is-spot-right');
+      b.classList.add('is-playing');
+      b.innerHTML = '<i data-lucide="volume-2"></i> Sonando…';
+      lucide.createIcons({ nodes: [b] });
+      anthem.onended = clearSpot;   // al terminar la canción, el escenario vuelve solo
+    }));
+  const leaveIntro = () => { stopAnthem(); anthem.onended = null; };
+  $('#ar-vs-stop').addEventListener('click', () => { stopAnthem(); clearSpot(); });
+  $('#ar-vs-back').addEventListener('click', () => { leaveIntro(); setPhase('select'); });
+  $('#ar-vs-go').addEventListener('click', () => { leaveIntro(); startFight(); });
   lucide.createIcons({ nodes: [$('#ph-intro')] });
 }
 
