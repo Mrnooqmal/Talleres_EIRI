@@ -11,7 +11,19 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body class="arena-body">
-    <main id="arena" class="arena"></main>
+    <main id="arena" class="arena">
+      <header class="ar-top">
+        <a href="/" class="ar-brand"><i data-lucide="zap"></i> EIRI ARENA</a>
+        <div class="ar-top-actions">
+          <button id="ar-mute" class="ar-icon-btn" title="Silenciar (M)"><i data-lucide="volume-2"></i></button>
+          <button id="ar-fs" class="ar-icon-btn" title="Pantalla completa (F)"><i data-lucide="maximize"></i></button>
+        </div>
+      </header>
+      <section id="ph-select" class="ar-phase"></section>
+      <section id="ph-intro" class="ar-phase" hidden></section>
+      <section id="ph-fight" class="ar-phase" hidden></section>
+      <section id="ph-victory" class="ar-phase" hidden></section>
+    </main>
     <script src="/static/js/arena.js?v=1"></script>
 </body>
 </html>

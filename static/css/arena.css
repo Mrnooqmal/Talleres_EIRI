@@ -1,3 +1,85 @@
-/* EIRI Arena — estilos de la pantalla de competencia */
-.arena-body { overflow: hidden; }
+/* EIRI Arena — pantalla de competencia (proyector: todo grande y oscuro) */
+.arena-body { overflow-x: hidden; background: #060b16; }
 .arena { min-height: 100vh; display: flex; flex-direction: column; }
+.ar-phase { flex: 1; padding: 1rem 2rem 2rem; }
+
+.ar-top {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.8rem 2rem; border-bottom: 1px solid var(--border);
+}
+.ar-brand {
+  font-family: var(--f-display); font-weight: 700; letter-spacing: 0.18em;
+  color: var(--gold-300); text-decoration: none; display: flex; gap: 0.5rem; align-items: center;
+}
+.ar-brand svg { width: 18px; height: 18px; }
+.ar-top-actions { display: flex; gap: 0.5rem; }
+.ar-icon-btn {
+  background: none; border: 1px solid var(--border-md); border-radius: 8px;
+  color: var(--text); width: 38px; height: 38px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ar-icon-btn:hover { border-color: var(--gold-400); color: var(--gold-300); }
+.ar-icon-btn svg { width: 17px; height: 17px; }
+
+.ar-btn {
+  font-family: var(--f-display); font-weight: 600; border-radius: 9px; cursor: pointer;
+  padding: 0.55rem 1.2rem; border: 1px solid var(--border-md);
+  background: var(--bg-2); color: var(--text); transition: all 0.2s var(--ease-out);
+}
+.ar-btn--gold { background: linear-gradient(135deg, var(--gold-400), #b8860b); color: #100c02; border: none; }
+.ar-btn--gold:hover { filter: brightness(1.15); }
+.ar-btn--ghost { background: none; }
+.ar-btn--ghost:hover { border-color: var(--gold-400); }
+
+.ar-title { font-family: var(--f-display); font-size: 1.6rem; color: #fff; }
+.ar-sub { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 1.2rem; }
+.ar-error { padding: 3rem; text-align: center; color: var(--text-dim); }
+
+/* Selección */
+.ar-sel-layout { display: grid; grid-template-columns: 1fr 280px; gap: 1.6rem; }
+.ar-sel-rounds { display: flex; gap: 1.2rem; align-items: flex-start; overflow-x: auto; padding-bottom: 0.6rem; }
+.ar-sel-round { display: flex; flex-direction: column; gap: 0.7rem; min-width: 200px; }
+.ar-sel-round-title {
+  font-family: var(--f-mono); font-size: 0.6rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--text-dim); text-align: center;
+}
+.ar-sel-round--third .ar-sel-round-title { color: #cd7f32; }
+.ar-sel-card {
+  border: 1px solid var(--border-md); border-radius: 10px; overflow: hidden;
+  background: rgba(8,16,30,0.94); opacity: 0.75;
+}
+.ar-sel-card.is-playable {
+  opacity: 1; cursor: pointer;
+  border-color: rgba(227,189,63,0.55);
+  box-shadow: 0 0 18px -6px var(--gold-glow);
+  animation: arGlow 2.2s ease-in-out infinite;
+}
+.ar-sel-card.is-playable:hover { transform: translateY(-2px); border-color: var(--gold-300); }
+@keyframes arGlow { 0%,100% { box-shadow: 0 0 14px -8px var(--gold-glow); } 50% { box-shadow: 0 0 26px -4px var(--gold-glow); } }
+.ar-sel-row { display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.7rem; }
+.ar-sel-row + .ar-sel-row { border-top: 1px solid var(--border); }
+.ar-sel-row.is-won { background: linear-gradient(90deg, rgba(201,162,39,0.2), transparent); }
+.ar-sel-logo { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; background: var(--bg-2); flex-shrink: 0; }
+.ar-sel-logo--ph {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--f-mono); font-size: 0.7rem; color: var(--gold-300);
+  border: 1px solid var(--border); text-transform: uppercase;
+}
+.ar-sel-name { flex: 1; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ar-sel-score { font-family: var(--f-mono); font-size: 0.8rem; font-weight: 700; color: var(--text-dim); }
+
+.ar-timer-cfg { display: flex; align-items: center; gap: 0.8rem; margin-top: 1.4rem; color: var(--text-dim); font-size: 0.85rem; }
+.ar-timer-cfg strong { font-family: var(--f-mono); font-size: 1.3rem; color: #fff; min-width: 4ch; text-align: center; }
+
+.ar-side { border-left: 1px solid var(--border); padding-left: 1.4rem; }
+.ar-side-title { font-family: var(--f-mono); font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.9rem; }
+.ar-side-item { font-size: 0.8rem; color: var(--text-dim); padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.ar-side-item strong { color: var(--gold-300); }
+.ar-side-label { display: block; font-family: var(--f-mono); font-size: 0.55rem; letter-spacing: 0.18em; color: var(--text-dim); opacity: 0.7; }
+.ar-side-empty { color: var(--text-dim); font-size: 0.8rem; opacity: 0.7; }
+
+.ar-resume {
+  display: flex; align-items: center; gap: 0.9rem; margin-bottom: 1.2rem;
+  padding: 0.8rem 1.1rem; border: 1px solid rgba(227,189,63,0.5); border-radius: 10px;
+  background: rgba(227,189,63,0.08); font-size: 0.88rem;
+}
