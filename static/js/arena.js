@@ -237,8 +237,11 @@ function startIntro() {
 
 // ─── Fase ③: combate ─────────────────────────────────
 let tickHandle = null, endAt = 0;
+let countdownTimer = null;   // id del setTimeout activo del countdown, cancelable
+let inCountdown = false;     // true mientras corre 3-2-1-¡PELEA!: bloquea teclado y corazones
 
 function startFight() {
+  cancelCountdown();   // defensa ante combates sucesivos: no debe quedar un countdown previo vivo
   S.hearts = { a: 3, b: 3 };
   S.remain = S.duration;
   S.sudden = false;
@@ -297,7 +300,7 @@ function renderFight() {
   $('#ar-pause').addEventListener('click', () => setPaused(S.running));
   $('#ar-abort').addEventListener('click', () => {
     if (!window.confirm('¿Cancelar este combate? No se guardará nada.')) return;
-    pauseTimer(); clearBackup(); stopAnthem(); setPhase('select');
+    cancelCountdown(); pauseTimer(); clearBackup(); stopAnthem(); setPhase('select');
   });
   refreshSuddenUI();
 }
@@ -318,6 +321,7 @@ function renderHearts(side, shake = false) {
 }
 
 function runCountdown(done) {
+  inCountdown = true;   // bloquea corazones y teclado hasta que termine la secuencia
   const el = $('#ar-countdown');
   el.hidden = false;
   const seq = ['3', '2', '1', '¡PELEA!'];
@@ -327,10 +331,18 @@ function runCountdown(done) {
     el.textContent = seq[k];
     el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
     k++;
-    if (k < seq.length) setTimeout(step, 900);
-    else setTimeout(() => { el.hidden = true; done(); }, 700);
+    if (k < seq.length) countdownTimer = setTimeout(step, 900);
+    else countdownTimer = setTimeout(() => { el.hidden = true; inCountdown = false; done(); }, 700);
   };
   step();
+}
+
+// Cancela un countdown en curso (p. ej. al abortar el combate): evita que sus
+// timeouts colgados llamen a done() sobre un estado ya descartado o nuevo.
+function cancelCountdown() {
+  clearTimeout(countdownTimer);
+  countdownTimer = null;
+  inCountdown = false;
 }
 
 // Timer sin deriva: recalcula contra Date.now() en cada tick.
@@ -372,7 +384,7 @@ function updateClock() {
 }
 
 function loseHeart(side) {
-  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 0) return;
+  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 0 || inCountdown) return;
   S.hearts[side]--;
   FX.hit();
   renderHearts(side, true);
@@ -381,7 +393,7 @@ function loseHeart(side) {
   if (S.hearts[side] === 0 || S.sudden) endFight(other);
 }
 function giveHeart(side) {
-  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 3) return;
+  if (S.phase !== 'fight' || S.winner || S.hearts[side] === 3 || inCountdown) return;
   S.hearts[side]++;
   renderHearts(side);
   saveBackup();
@@ -428,6 +440,7 @@ function spawnSparks() {
 // Teclado del combate
 document.addEventListener('keydown', (e) => {
   if (S.phase !== 'fight' || S.winner) return;
+  if (inCountdown) return;   // durante 3-2-1-¡PELEA! no se admiten corazones ni pausa
   const k = e.key.toLowerCase();
   if (k === 'q') loseHeart('a');
   if (k === 'a') giveHeart('a');
