@@ -276,7 +276,7 @@ async function initDB() {
     bracket_subtitle: 'El camino hacia la corona Battlebots',
     // Estructura del bracket de eliminación simple. Se regenera al cambiar el tamaño.
     // { size, rounds: [ [ {a,b,scoreA,scoreB,winner}, ... ], ... ] }
-    bracket_data: JSON.stringify({ size: 8, rounds: emptyBracketRounds(8) }),
+    bracket_data: JSON.stringify({ size: 8, rounds: emptyBracketRounds(8), third: emptyThirdMatch() }),
     club_acronym: 'Equipo Interdisciplinario de Robótica e Innovación',
     club_tagline: 'Donde la ingeniería, el diseño y el código se encuentran.',
     club_intro: 'EIRI reúne a estudiantes de distintas disciplinas para construir, programar e innovar en robótica. Creemos en aprender haciendo: del esquemático al código, de la impresión 3D a la arena de combate.',
@@ -375,6 +375,10 @@ function emptyBracketRounds(size) {
   return rounds
 }
 
+function emptyThirdMatch() {
+  return { a: null, b: null, scoreA: '', scoreB: '', winner: null }
+}
+
 // Propaga los ganadores: el ganador del partido i de la ronda r ocupa el slot
 // (a si i es par, b si impar) del partido floor(i/2) de la ronda r+1.
 function resolveBracket(bracket) {
@@ -388,6 +392,14 @@ function resolveBracket(bracket) {
       if (i % 2 === 0) next.a = winnerTeam
       else            next.b = winnerTeam
     }
+  }
+  // 3er lugar: los perdedores de las semifinales (penúltima ronda)
+  const semis = rounds.length >= 2 ? rounds[rounds.length - 2] : null
+  if (semis && semis.length === 2) {
+    if (!bracket.third) bracket.third = emptyThirdMatch()
+    const loser = (m) => m.winner === 'a' ? m.b : m.winner === 'b' ? m.a : null
+    bracket.third.a = loser(semis[0])
+    bracket.third.b = loser(semis[1])
   }
   return bracket
 }
@@ -412,7 +424,13 @@ function sanitizeBracket(raw) {
       m.winner = src.winner === 'a' || src.winner === 'b' ? src.winner : null
     }
   }
-  return resolveBracket({ size, rounds: base })
+  // El 3er lugar solo acepta scores/winner; los equipos se propagan desde las semis.
+  const srcT = raw?.third || {}
+  const third = emptyThirdMatch()
+  third.scoreA = String(srcT.scoreA ?? '').slice(0, 6)
+  third.scoreB = String(srcT.scoreB ?? '').slice(0, 6)
+  third.winner = srcT.winner === 'a' || srcT.winner === 'b' ? srcT.winner : null
+  return resolveBracket({ size, rounds: base, third })
 }
 
 // ─── Pages ───────────────────────────────────────────
@@ -850,12 +868,15 @@ async function getBracketPayload() {
   let data
   try { data = JSON.parse(cfg.bracket_data || '{}') } catch { data = {} }
   if (!Array.isArray(data.rounds)) data = { size: 8, rounds: emptyBracketRounds(8) }
-  const teams = await db.all('SELECT id, name, logo FROM teams ORDER BY id')
+  if (!data.third) data.third = emptyThirdMatch()   // brackets guardados antes de este cambio
+  const teams = await db.all('SELECT id, name, logo, anthem FROM teams ORDER BY id')
+  const resolved = resolveBracket(data)
   return {
     title:    cfg.bracket_title || 'Llave del torneo',
     subtitle: cfg.bracket_subtitle || '',
     size:     data.size,
-    rounds:   resolveBracket(data).rounds,
+    rounds:   resolved.rounds,
+    third:    resolved.third,
     teams,
   }
 }

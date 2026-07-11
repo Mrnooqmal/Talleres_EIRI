@@ -1884,6 +1884,7 @@ async function loadBracketAdmin() {
     bkState = {
       size: data.size || 8,
       rounds: Array.isArray(data.rounds) && data.rounds.length ? data.rounds : bkEmptyRounds(data.size || 8),
+      third: data.third || null,
       title: data.title || '',
       subtitle: data.subtitle || '',
     };
@@ -2081,6 +2082,7 @@ document.getElementById('saveBracketBtn')?.addEventListener('click', async () =>
     await api('PUT', '/api/admin/bracket', {
       size: bkState.size,
       rounds: bkState.rounds,
+      third: bkState.third,
       title: document.getElementById('bk-title').value.trim(),
       subtitle: document.getElementById('bk-subtitle').value.trim(),
     });
