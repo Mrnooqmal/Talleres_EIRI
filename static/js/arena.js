@@ -422,7 +422,77 @@ function endFight(winner) {
   document.body.classList.remove('is-sudden');
   showVictory();
 }
-function showVictory() { console.log('victoria pendiente', S.winner); }   // Task 9
+// ─── Fase ④: victoria ────────────────────────────────
+function showVictory() {
+  const m = matchOf(S.sel);
+  const W = team(S.winner === 'a' ? m.a : m.b);
+  setPhase('victory');
+  $('#ph-victory').innerHTML = `
+    <div class="ar-v">
+      <div class="ar-v-confetti" id="ar-confetti"></div>
+      <div class="ar-v-crown"><i data-lucide="crown"></i></div>
+      ${W.logo ? `<img src="${esc(W.logo)}" class="ar-v-logo" alt="">`
+               : `<span class="ar-v-logo ar-v-logo--ph">${esc(W.name[0])}</span>`}
+      <h1 class="ar-v-name">${esc(W.name)}</h1>
+      <div class="ar-v-label">${S.sel.kind === 'third' ? '¡TERCER LUGAR!' : isFinal(S.sel) ? '¡CAMPEÓN DEL TORNEO!' : '¡VICTORIA!'}</div>
+      <div class="ar-v-score">${S.hearts.a} — ${S.hearts.b}</div>
+      <p class="ar-v-err" id="confirmErr"></p>
+      <div class="ar-v-actions">
+        <button class="ar-btn ar-btn--ghost" id="ar-v-discard">Descartar</button>
+        <button class="ar-btn ar-btn--gold ar-btn--big" id="ar-v-confirm">Confirmar resultado</button>
+      </div>
+    </div>`;
+  spawnConfetti();
+  if (W.anthem) playAnthem(W.anthem, { fade: true }); else FX.fanfare();
+  $('#ar-v-confirm').addEventListener('click', confirmResult);
+  $('#ar-v-discard').addEventListener('click', () => {
+    if (!window.confirm('¿Descartar el resultado? No se guardará nada.')) return;
+    stopAnthem(); clearBackup(); setPhase('select');
+  });
+  lucide.createIcons({ nodes: [$('#ph-victory')] });
+}
+
+function spawnConfetti() {
+  const box = $('#ar-confetti');
+  const colors = ['#e3bd3f', '#f4d774', '#42a5f5', '#ef4444', '#4ade80', '#ffffff'];
+  for (let k = 0; k < 120; k++) {
+    const p = document.createElement('i');
+    p.style.cssText = `left:${Math.random() * 100}%;background:${colors[k % colors.length]};` +
+      `animation-delay:${Math.random() * 2.5}s;animation-duration:${2.4 + Math.random() * 2.4}s;` +
+      `width:${5 + Math.random() * 7}px;height:${8 + Math.random() * 8}px;`;
+    box.appendChild(p);
+  }
+}
+
+let saving = false;
+async function confirmResult() {
+  if (saving) return;
+  saving = true;
+  $('#ar-v-confirm').textContent = 'Guardando...';
+  const body = {
+    scoreA: String(S.hearts.a),
+    scoreB: String(S.hearts.b),
+    winner: S.winner,
+    ...(S.sel.kind === 'third' ? { third: true } : { round: S.sel.r, index: S.sel.i }),
+  };
+  try {
+    const res = await fetch('/api/admin/bracket/match', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+    clearBackup();
+    stopAnthem();
+    await loadBracket();
+    setPhase('select');
+  } catch (e) {
+    $('#confirmErr').textContent = `No se pudo guardar: ${e.message} — puedes reintentar.`;
+    $('#ar-v-confirm').textContent = 'Confirmar resultado';
+  } finally {
+    saving = false;
+  }
+}
 
 // Partículas doradas flotando durante la GRAN FINAL
 function spawnSparks() {

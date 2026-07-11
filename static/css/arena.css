@@ -166,3 +166,23 @@ body.is-final .ar-f-stage { border: 1px solid rgba(227,189,63,0.4); border-radiu
   20%, 80% { opacity: 0.85; }
   50% { transform: translateY(-60px); }
 }
+
+/* Victoria */
+.ar-v { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 130px); gap: 1rem; position: relative; overflow: hidden; }
+.ar-v-crown svg { width: 54px; height: 54px; color: var(--gold-400); filter: drop-shadow(0 0 14px var(--gold-glow)); animation: arDrop 0.5s var(--ease-out) both; }
+.ar-v-logo { width: clamp(150px, 22vw, 260px); height: clamp(150px, 22vw, 260px); border-radius: 26px; object-fit: cover; background: var(--bg-2); border: 2px solid rgba(227,189,63,0.5); box-shadow: 0 0 80px -20px var(--gold-glow); animation: arPop 0.55s var(--ease-out) both 0.1s; }
+.ar-v-logo--ph { display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-size: 5rem; color: var(--gold-300); }
+.ar-v-name { font-family: var(--f-display); font-size: clamp(1.8rem, 4.5vw, 3.4rem); color: #fff; animation: arDrop 0.5s var(--ease-out) both 0.25s; }
+.ar-v-label { font-family: var(--f-display); letter-spacing: 0.35em; color: var(--gold-300); font-size: clamp(0.9rem, 2vw, 1.4rem); animation: arDrop 0.5s var(--ease-out) both 0.35s; }
+.ar-v-score { font-family: var(--f-mono); font-size: clamp(1.6rem, 3.5vw, 2.6rem); font-weight: 700; color: var(--text-dim); }
+.ar-v-actions { display: flex; gap: 1rem; margin-top: 0.6rem; }
+.ar-v-err { color: #ef4444; font-size: 0.85rem; min-height: 1.2em; }
+.ar-v-confetti { position: absolute; inset: 0; pointer-events: none; }
+.ar-v-confetti i {
+  position: absolute; top: -20px; border-radius: 2px; opacity: 0.9;
+  animation-name: arConfetti; animation-timing-function: linear; animation-iteration-count: infinite;
+}
+@keyframes arConfetti {
+  0% { transform: translateY(-20px) rotate(0deg); }
+  100% { transform: translateY(105vh) rotate(720deg); }
+}
