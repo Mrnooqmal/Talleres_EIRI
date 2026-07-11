@@ -204,6 +204,7 @@ function fmtClock(s) {
 function startIntro() {
   const m = matchOf(S.sel);
   const A = team(m.a), B = team(m.b);
+  if (!A || !B) { window.alert('Falta un equipo de este partido (¿fue eliminado?). Revisa el bracket en el panel admin.'); return; }
   setPhase('intro');
   const side = (t, dir) => `
     <div class="ar-vs-side ar-vs-side--${dir}">
@@ -252,6 +253,9 @@ function startFight() {
 
 function resumeFight(backup) {
   S.sel = backup.sel;
+  // guard: si el partido ya no tiene ambos equipos (borrados tras el backup), descarta y vuelve a selección
+  const m = matchOf(S.sel);
+  if (!m || !team(m.a) || !team(m.b)) { clearBackup(); setPhase('select'); return; }
   S.duration = backup.duration;
   S.hearts = backup.hearts;
   S.remain = backup.remain;
