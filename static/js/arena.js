@@ -20,7 +20,7 @@ const $ = (q) => document.querySelector(q);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 
 const team = (id) => (id != null ? S.teams[id] : null);
-const matchOf = (sel) => sel.kind === 'third' ? S.bracket.third : S.bracket.rounds[sel.r][sel.i];
+const matchOf = (sel) => sel.kind === 'third' ? S.bracket.third : S.bracket.rounds[sel.r]?.[sel.i];
 const isFinal = (sel) => sel.kind === 'round' && sel.r === S.bracket.rounds.length - 1;
 
 function roundLabel(sel) {
