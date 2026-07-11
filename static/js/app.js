@@ -756,16 +756,35 @@ async function loadBracket() {
       return h + '</div>';
     };
 
-    // Centro: final + campeón (ocupa el ancho de una columna)
+    // 3er lugar: se calcula con los perdedores de las semis (Task 2 ya los resuelve en el backend).
+    const third = data.third || null;
+    const thirdWinner = third
+      ? (third.winner === 'a' ? teamsById[third.a] : third.winner === 'b' ? teamsById[third.b] : null)
+      : null;
+    const thirdBlock = third && (third.a != null || third.b != null) ? `
+      <div class="bk-third">
+        <div class="bk-third-title"><i data-lucide="medal"></i> 3er lugar</div>
+        ${matchCard(third)}
+        ${thirdWinner ? `<div class="bk-third-winner">🥉 ${escapeHtml(thirdWinner.name)}</div>` : ''}
+      </div>` : '';
+
+    // Centro: final + campeón (ocupa el ancho de una columna).
+    // El campeón y el 3er lugar viven juntos en `.bk-podium` (ver CSS: sin
+    // 3er lugar es absolute, igual que antes era `.bk-champ` solo, para no
+    // afectar la altura de la final; con 3er lugar pasa a flujo normal para
+    // no superponerse con él).
     const center = `<div class="bk-center" style="flex:1">
       <div class="bk-center-title">${bracketRoundName(1)}</div>
       ${champMatch ? matchCard(champMatch) : ''}
-      <div class="bk-champ ${champ ? 'is-crowned' : ''}">
-        <i data-lucide="crown" class="bk-crown"></i>
-        ${champ
-          ? `${champ.logo ? `<img src="${escapeHtml(champ.logo)}" alt="" class="bk-champ-logo">` : `<span class="bk-champ-logo bk-logo--ph">${escapeHtml(champ.name[0])}</span>`}
-             <span class="bk-champ-name">${escapeHtml(champ.name)}</span>`
-          : `<span class="bk-champ-name bk-champ-name--tbd">Por coronar</span>`}
+      <div class="bk-podium">
+        <div class="bk-champ ${champ ? 'is-crowned' : ''}">
+          <i data-lucide="crown" class="bk-crown"></i>
+          ${champ
+            ? `${champ.logo ? `<img src="${escapeHtml(champ.logo)}" alt="" class="bk-champ-logo">` : `<span class="bk-champ-logo bk-logo--ph">${escapeHtml(champ.name[0])}</span>`}
+               <span class="bk-champ-name">${escapeHtml(champ.name)}</span>`
+            : `<span class="bk-champ-name bk-champ-name--tbd">Por coronar</span>`}
+        </div>
+        ${thirdBlock}
       </div>
     </div>`;
 
