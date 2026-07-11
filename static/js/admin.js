@@ -1767,6 +1767,15 @@ function teamFormHTML(team = {}) {
         </div>
       </div>
     </div>
+    <div class="field-group">
+      <label>Canción / tema (suena en la arena)</label>
+      <div class="team-logo-actions">
+        <input type="text" id="f-team-anthem" value="${escHtml(team.anthem || '')}" placeholder="URL del MP3 o sube un archivo">
+        <button type="button" class="btn-ghost btn--sm" id="f-team-anthem-btn"><i data-lucide="music"></i> Subir canción</button>
+        <input type="file" id="f-team-anthem-file" accept=".mp3,.m4a,.ogg,.wav" style="display:none">
+        <span id="f-team-anthem-status" style="font-size:.72rem;color:var(--text-dim)"></span>
+      </div>
+    </div>
   `;
 }
 
@@ -1803,16 +1812,42 @@ function bindTeamLogoUpload() {
   });
 }
 
+function bindTeamAnthemUpload() {
+  const input  = document.getElementById('f-team-anthem');
+  const btn    = document.getElementById('f-team-anthem-btn');
+  const file   = document.getElementById('f-team-anthem-file');
+  const status = document.getElementById('f-team-anthem-status');
+  if (!input) return;
+  btn?.addEventListener('click', () => file.click());
+  file?.addEventListener('change', async () => {
+    if (!file.files.length) return;
+    status.textContent = 'Subiendo...';
+    try {
+      const fd = new FormData();
+      fd.append('file', file.files[0]);
+      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      input.value = data.url;
+      status.textContent = 'Listo';
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+    }
+  });
+}
+
 document.getElementById('addTeamBtn')?.addEventListener('click', () => {
   openModal('Nuevo equipo', teamFormHTML(), async () => {
     const name = document.getElementById('f-team-name').value.trim();
     const logo = document.getElementById('f-team-logo').value.trim();
+    const anthem = document.getElementById('f-team-anthem').value.trim();
     if (!name) return alert('Nombre requerido');
-    await api('POST', '/api/admin/teams', { name, logo });
+    await api('POST', '/api/admin/teams', { name, logo, anthem });
     closeModal();
     loadTeamsAdmin();
   });
   bindTeamLogoUpload();
+  bindTeamAnthemUpload();
 });
 
 function editTeam(id) {
@@ -1820,12 +1855,14 @@ function editTeam(id) {
   openModal('Editar equipo', teamFormHTML(team), async () => {
     const name = document.getElementById('f-team-name').value.trim();
     const logo = document.getElementById('f-team-logo').value.trim();
+    const anthem = document.getElementById('f-team-anthem').value.trim();
     if (!name) return alert('Nombre requerido');
-    await api('PUT', `/api/admin/teams/${id}`, { name, logo });
+    await api('PUT', `/api/admin/teams/${id}`, { name, logo, anthem });
     closeModal();
     loadTeamsAdmin();
   });
   bindTeamLogoUpload();
+  bindTeamAnthemUpload();
 }
 
 function deleteTeam(id, name) {
