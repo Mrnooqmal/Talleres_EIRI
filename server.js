@@ -555,6 +555,36 @@ app.post('/api/admin/upload', requireAdmin, upload.single('file'), async (req, r
   }
 })
 
+// Presigned URL para subir directamente a S3 (evita el limite de 4.5MB de Vercel)
+app.post('/api/admin/upload/presign', requireAdmin, async (req, res) => {
+  if (!S3_BUCKET || !s3Client) {
+    return res.status(400).json({ error: 'S3 no configurado — usa el upload normal' })
+  }
+  const { filename, contentType } = req.body
+  if (!filename) return res.status(400).json({ error: 'Nombre de archivo requerido' })
+  if (!ALLOWED_FILES.test(filename)) return res.status(400).json({ error: 'Tipo de archivo no permitido' })
+  try {
+    const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
+    const { PutObjectCommand } = require('@aws-sdk/client-s3')
+    const key = `uploads/${newKey({ originalname: filename }, path.extname(filename).toLowerCase())}`
+    const command = new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      ContentType: contentType || 'application/octet-stream',
+      CacheControl: 'public, max-age=31536000, immutable',
+    })
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 300 })
+    const publicUrl = S3_PUBLIC_URL
+      ? `${S3_PUBLIC_URL}/${key}`
+      : `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com/${key}`
+    await log(req, 'presign_upload', filename)
+    res.json({ presignedUrl, publicUrl, key })
+  } catch (err) {
+    console.error('Presign error:', err)
+    res.status(500).json({ error: 'No se pudo generar la URL de subida' })
+  }
+})
+
 // ─── Public API ──────────────────────────────────────
 
 app.get('/api/config', async (req, res) => res.json(await getConfig()))

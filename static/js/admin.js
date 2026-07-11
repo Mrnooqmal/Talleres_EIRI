@@ -1801,11 +1801,13 @@ function bindTeamLogoUpload() {
       const fd = new FormData();
       fd.append('file', file.files[0]);
       const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 100)); }
+      if (!res.ok) throw new Error(data.error || 'Error en la subida');
       input.value = data.url;
       refresh();
-      status.textContent = 'Listo';
+      status.textContent = 'Listo ✓';
     } catch (e) {
       status.textContent = 'Error: ' + e.message;
     }
@@ -1821,15 +1823,47 @@ function bindTeamAnthemUpload() {
   btn?.addEventListener('click', () => file.click());
   file?.addEventListener('change', async () => {
     if (!file.files.length) return;
+    const f = file.files[0];
     status.textContent = 'Subiendo...';
     try {
-      const fd = new FormData();
-      fd.append('file', file.files[0]);
-      const res  = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      input.value = data.url;
-      status.textContent = 'Listo';
+      // Intentar presigned URL (subida directa a S3, sin limite de 4.5MB)
+      let uploaded = false;
+      try {
+        const presignRes = await fetch('/api/admin/upload/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: f.name, contentType: f.type || 'audio/mpeg' }),
+        });
+        if (presignRes.ok) {
+          const { presignedUrl, publicUrl } = await presignRes.json();
+          // Subir directo a S3
+          status.textContent = 'Subiendo a la nube...';
+          const s3Res = await fetch(presignedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': f.type || 'audio/mpeg', 'Cache-Control': 'public, max-age=31536000, immutable' },
+            body: f,
+          });
+          if (!s3Res.ok) throw new Error('Error al subir a S3');
+          input.value = publicUrl;
+          uploaded = true;
+        }
+      } catch (presignErr) {
+        // Presign no disponible (dev local sin S3) — fallback al upload normal
+        console.warn('Presign no disponible, usando upload normal:', presignErr.message);
+      }
+
+      // Fallback: upload multipart tradicional (funciona en local, falla >4.5MB en Vercel)
+      if (!uploaded) {
+        const fd = new FormData();
+        fd.append('file', f);
+        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 100)); }
+        if (!res.ok) throw new Error(data.error || 'Error en la subida');
+        input.value = data.url;
+      }
+      status.textContent = 'Listo ✓';
     } catch (e) {
       status.textContent = 'Error: ' + e.message;
     }
