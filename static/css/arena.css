@@ -1,0 +1,3 @@
+/* EIRI Arena — estilos de la pantalla de competencia */
+.arena-body { overflow: hidden; }
+.arena { min-height: 100vh; display: flex; flex-direction: column; }

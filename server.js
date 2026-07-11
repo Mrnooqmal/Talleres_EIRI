@@ -507,6 +507,11 @@ app.get(['/admin', '/admin/*'], async (req, res) => {
   res.render('admin.html', { username: req.auth.adminUser })
 })
 
+app.get('/arena', async (req, res) => {
+  if (!req.auth) return res.redirect('/admin/login')
+  res.render('arena.html')
+})
+
 // Upload (S3 o disco local segun configuracion)
 
 app.post('/api/admin/upload', requireAdmin, upload.single('file'), async (req, res) => {
@@ -893,6 +898,39 @@ app.put('/api/admin/bracket', requireAdmin, async (req, res) => {
   if (typeof req.body.subtitle === 'string')
     await db.run('INSERT OR REPLACE INTO site_config (key, value) VALUES (?,?)', 'bracket_subtitle', req.body.subtitle.slice(0, 200))
   await log(req, 'update_bracket', `size=${clean.size}`)
+  res.json({ ok: true })
+})
+
+// Actualiza un solo partido (o el 3er lugar) — lo usa la arena al confirmar un resultado.
+app.put('/api/admin/bracket/match', requireAdmin, async (req, res) => {
+  const cfg = await getConfig()
+  let data
+  try { data = JSON.parse(cfg.bracket_data || '{}') } catch { data = {} }
+  if (!Array.isArray(data.rounds)) data = { size: 8, rounds: emptyBracketRounds(8) }
+  if (!data.third) data.third = emptyThirdMatch()
+  resolveBracket(data)  // asegura participantes propagados antes de validar
+
+  const { scoreA = '', scoreB = '', winner } = req.body
+  if (winner !== 'a' && winner !== 'b') return res.status(400).json({ error: 'winner debe ser a o b' })
+
+  let m, label
+  if (req.body.third) {
+    m = data.third
+    label = '3er lugar'
+  } else {
+    const r = parseInt(req.body.round, 10), i = parseInt(req.body.index, 10)
+    m = data.rounds[r]?.[i]
+    if (!m) return res.status(400).json({ error: 'Partido inexistente' })
+    label = `ronda ${r} partido ${i}`
+  }
+  if (m.a == null || m.b == null) return res.status(400).json({ error: 'El partido aún no tiene ambos equipos' })
+
+  m.scoreA = String(scoreA).slice(0, 6)
+  m.scoreB = String(scoreB).slice(0, 6)
+  m.winner = winner
+  resolveBracket(data)
+  await db.run('INSERT OR REPLACE INTO site_config (key, value) VALUES (?,?)', 'bracket_data', JSON.stringify(data))
+  await log(req, 'update_bracket_match', `${label}: ${m.scoreA}-${m.scoreB} winner=${winner}`)
   res.json({ ok: true })
 })
 
